@@ -1,0 +1,138 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    background-color: #F7F6F5;
+    padding: 0 10vw;
+}
+
+.footer_top{
+    display: flex;
+    justify-content: space-between;
+    padding-top: 1rem;
+}
+
+.footer_top_left{
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex: 3;
+}
+
+.logo{
+    width: 2rem;
+}
+
+.logo_text{
+    font-family: "Honk", sans-serif;
+    font-size: 2.5rem;
+}
+
+.footer_top_right{
+    display: flex;
+    justify-content: space-evenly;
+    gap: 5rem;
+    flex: 2;
+
+    p{
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+
+    ul{
+        padding-left: 0;
+
+        li{
+            list-style: none;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--footlinks);
+            
+        }
+
+        li:hover{
+            color: var(--btn);
+        }
+    }
+}
+
+
+hr{
+    width: 100%;
+}
+
+.footer_bottom{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.footer_bottom_right{
+    gap: 1rem;
+    display: flex;
+}
+
+.facebook:hover{
+    color:#3b5998
+}
+
+.instagram:hover{
+    color:#e1306c
+}
+
+.twitter:hover{
+    color:#00aced
+}           
+
+.dribbble:hover{
+    color:#ea4c89
+}
+
+.linkedin:hover{
+    color:#007bb6 
+}
+
+
+/* CSS breakpoints*/
+
+@media(max-width: 768px){
+    .footer_top{
+        flex-direction: column; 
+        padding-top: 0;       
+    }
+
+    .footer_top_right{
+        padding-top: 0;
+
+        p{
+            font-size: 1rem;
+        }
+        ul{
+            li{
+                margin-top: 0.5rem;
+                font-size: 0.8rem;
+            }
+        }
+    }
+
+    .footer_bottom{
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+
+        p{
+            font-size: 0.8rem;
+        }
+    }
+}
+
+@media(max-width: 640px){
+    .footer_top_right{
+        flex-direction: column;
+        gap: 0;
+    }
+}

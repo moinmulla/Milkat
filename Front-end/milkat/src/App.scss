@@ -1,0 +1,88 @@
+:root{
+    --bg: #ffffff;
+    --bgsoft: #2d2b42;
+    --text: rgb(0, 0, 0);
+    --textsoft: #e5e5e5;
+    --btn: #3673fd;
+    --svgbg:#e5e7eb;
+    --border:#8d8e9080;
+    --navbg:#e7e3e3;
+    --footlinks:#737373
+}
+  
+.container{
+    width: auto;
+    margin: auto;
+    padding-left: 50px;
+    padding-right: 50px;
+    margin: 0 100px;
+    min-height: calc(100dvh - 364.8px);
+    display: flex;
+    flex-direction: column;
+    // justify-content: space-between;
+    gap: 1rem;
+}
+  
+html{
+    scroll-behavior: smooth;
+}
+  
+body{
+    // background-color: var(--bg);
+    // background: rgb(2,0,36);
+    // background: linear-gradient(180deg, rgba(2,0,36,0.4599089635854342) 0%, rgba(252,187,230,0.44870448179271705) 13%, rgba(0,212,255,0.3086484593837535) 100%); 
+    background: rgb(17,0,36);
+    background: linear-gradient(180deg, rgba(17,0,36,0.375875350140056) 0%, rgba(251,252,187,0.44870448179271705) 13%, rgba(255,0,0,0.25262605042016806) 100%);
+}
+  
+a{
+    text-decoration: none;
+}
+  
+  /* css breakpoints */
+@media(max-width: 1536px){
+    .container{
+        margin: 0 50px;        
+    }
+}
+  
+@media(max-width: 1366px){
+    .container{
+        margin: 0 30px;       
+    }
+}
+  
+@media(max-width: 1280px){
+    .container{
+        margin: 0 20px;      
+        padding: 0 10px;    
+    }
+}
+  
+@media(max-width: 1024px){
+    .container{
+        margin: 0 10px;        
+    }
+}
+  
+@media(max-width: 768px){
+    .container{
+        margin: 0 5px;  
+        min-height: 59.6dvh;      
+    }
+}
+  
+@media(max-width: 640px){
+    .container{
+        margin: 0 3px;
+        min-height: 45.8dvh;        
+    }
+}
+  
+@media(max-width: 475px){
+    .container{
+        margin: 0 2px; 
+        padding: 0 0.8rem;        
+    }
+}
+

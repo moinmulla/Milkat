@@ -1,0 +1,133 @@
+@font-face {
+    font-family: 'Honk';
+    src: url('../../../public/assets/Honk.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.container{
+    position: sticky;
+    top: 0;
+    padding-top: 0.5rem;
+    transition: 0.5s;
+    border-radius: 2rem;
+}
+  
+.navbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    border-radius: 2rem;
+    // backdrop-filter: blur(0.8rem);
+    // background-color: gray;
+}
+
+.navbar_scroll{
+    .navbar{
+        background-color: var(--navbg);
+    }
+}
+
+.logo{
+    font-family: "Honk", sans-serif;
+    font-size: 3rem;
+}
+
+.links{
+    display: flex;
+    gap: 2rem;
+    font-size: 1.5rem;
+
+    a{
+        color: var(--text);
+        font-weight: 500;
+    }
+}
+
+
+ /* css breakpoints */
+@media(max-width: 1536px){
+
+}
+  
+@media(max-width: 1366px){
+    .logo{
+        font-size: 2rem;
+    }
+
+    .links{
+        font-size: 1.3rem;;
+    }
+}
+  
+@media(max-width: 1280px){
+   .logo{
+       font-size: 1.8rem;
+    }
+
+    .links{
+        font-size: 1.2rem;
+    }
+}
+  
+@media(max-width: 1024px){
+    .logo{
+       font-size: 1.6rem;
+    }
+
+    .links{
+        font-size: 1rem;
+    }
+}
+
+@media (min-width: 768px){
+    .menu_button{
+        display: none;
+    }
+}
+  
+@media(max-width: 768px){
+    .logo{
+        font-size: 1.6rem;
+    }
+
+    .menu_button{
+        display: block;
+        cursor: pointer;
+        transition: ease-in-out 1s; 
+    }
+
+    .mobile_links{
+        font-size: 0.9rem;
+        border-radius: 25px;
+        background-color: var(--navbg);
+        position: absolute;
+        top: 90px;
+        right: 0;
+        width: 50%;
+        height: calc(100dvh - 110px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        transition: ease-in-out 0.5s;
+    }
+
+    .mobile_links a{
+        color: var(--text);
+    }
+
+    .links{
+        display: none;
+    }
+}
+  
+@media(max-width: 640px){
+    
+}
+  
+@media(max-width: 475px){
+   
+}
