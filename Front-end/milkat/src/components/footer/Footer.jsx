@@ -20,7 +20,10 @@ function Footer() {
           <div className={styles.features}>
             <p>Features</p>
             <ul>
-              <a href="#">
+              <a href="/listup">
+                <li>List Up</li>
+              </a>
+              <a href="/prediction">
                 <li>House Price Prediction</li>
               </a>
               <a href="#">
@@ -34,10 +37,10 @@ function Footer() {
           <div className={styles.links}>
             <p>Quick Links</p>
             <ul>
-              <a href="#">
+              <a href="/about">
                 <li>About Us</li>
               </a>
-              <a href="#">
+              <a href="/contact">
                 <li>Contact Us</li>
               </a>
               <a href="#">

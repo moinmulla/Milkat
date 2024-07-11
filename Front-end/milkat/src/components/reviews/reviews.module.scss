@@ -1,0 +1,40 @@
+.container{
+    // margin: 2rem 0;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 0 8px #ddd;
+}
+
+.reviews_content{
+    display: flex;
+    gap: 1rem;
+}
+
+.icon{
+    height: 1.5rem;
+    width: auto;
+}
+
+.caption{
+    font-weight: bold;
+    font-size: 1.25rem;
+    margin: 1rem 0;
+}
+
+.review{
+    font-size: 1rem;
+}
+
+/*CSS breakpoints*/
+
+@media(max-width: 768px){
+    .caption{
+        font-size: 1rem;
+        margin: 1rem 0;
+    }
+
+    .review{
+        font-size: 0.8rem;
+    }
+}
