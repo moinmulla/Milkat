@@ -1,7 +1,8 @@
 import React from "react";
 import styles from "./navbar.module.scss";
 import { useState, useEffect } from "react";
-import "../../fonts/Honk.ttf";
+import { Link } from "react-router-dom";
+import { FaUser } from "react-icons/fa";
 
 function Navbar() {
   const [show, handleShow] = useState(false);
@@ -26,13 +27,19 @@ function Navbar() {
     <div className={`${styles.container} ${show ? styles.navbar_scroll : ""}`}>
       <nav className={styles.navbar}>
         <span className={styles.logo}>
-          <a href="/">Milkat</a>
+          <Link to="/">Milkat</Link>
         </span>
         <div className={styles.links}>
           <a href="/listup">List Up</a>
           <a href="/prediction">Price Prediction</a>
           <a href="/contact">Contact</a>
           <a href="/about">About</a>
+          <div className={styles.user}>
+            <FaUser className={styles.icon} />
+            <a href="/login" className={styles.login}>
+              Login
+            </a>
+          </div>
         </div>
 
         {!open && (
@@ -58,6 +65,12 @@ function Navbar() {
 
         {open && (
           <div className={styles.mobile_links}>
+            <div className={styles.user}>
+              <FaUser className={styles.icon} />
+              <a href="/login" className={styles.login}>
+                Login
+              </a>
+            </div>
             <a href="/listup" onClick={() => setOpen(false)}>
               List Up
             </a>

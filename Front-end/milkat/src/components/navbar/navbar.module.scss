@@ -50,6 +50,17 @@
         font-weight: 500;
         text-decoration: none;
     }
+
+    .user{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        .login{
+            font-size: 0.7rem;
+        }
+    }
 }
 
 
@@ -129,6 +140,10 @@
 
     .links{
         display: none;
+    }
+
+    .icon{
+        margin-right: 0.5rem;
     }
 }
   

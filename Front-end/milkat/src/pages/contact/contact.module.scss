@@ -1,0 +1,11 @@
+.container{
+    margin: 4rem 0;
+}
+
+/*CSS breakpoint*/
+
+@media(max-width: 768px){
+    .container{ 
+        margin: 0;
+    }
+}   
