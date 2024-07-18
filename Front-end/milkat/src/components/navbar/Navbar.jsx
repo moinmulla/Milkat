@@ -30,8 +30,7 @@ function Navbar() {
           <Link to="/">Milkat</Link>
         </span>
         <div className={styles.links}>
-          <a href="/listup">List Up</a>
-          <a href="/prediction">Price Prediction</a>
+          <a href="/prediction">Price-Prediction</a>
           <a href="/contact">Contact</a>
           <a href="/about">About</a>
           <div className={styles.user}>
@@ -71,9 +70,6 @@ function Navbar() {
                 Login
               </a>
             </div>
-            <a href="/listup" onClick={() => setOpen(false)}>
-              List Up
-            </a>
             <a href="/prediction" onClick={() => setOpen(false)}>
               Price Prediction
             </a>
