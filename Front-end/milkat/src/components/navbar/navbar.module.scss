@@ -51,16 +51,24 @@
         text-decoration: none;
     }
 
-    .user{
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
+    .userBtn{
+        background: transparent;
+        border: none;
+        cursor: pointer;
 
-        .login{
-            font-size: 0.7rem;
+        .user{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+    
+            .login{
+                font-size: 0.7rem;
+            }
         }
     }
+
+    
 }
 
 
@@ -136,6 +144,13 @@
     .mobile_links a{
         color: var(--text);
         text-decoration: none;
+    }
+
+    .userBtn{
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--text);
     }
 
     .links{

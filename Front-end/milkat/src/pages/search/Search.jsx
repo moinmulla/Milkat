@@ -1,5 +1,6 @@
 import React from "react";
 import SearchBar from "../../components/searchbar/SearchBar";
+import Select from "../../components/select/Select";
 import styles from "./search.module.scss";
 
 function Search() {
@@ -11,6 +12,9 @@ function Search() {
       <div className={styles.content}>
         <div className={styles.search}>
           <SearchBar />
+        </div>
+        <div>
+          <Select />
         </div>
         <div className={styles.filterSort}>
           <div className={styles.filter}>Filter</div>

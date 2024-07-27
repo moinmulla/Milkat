@@ -1,12 +1,14 @@
 import React from "react";
-import styles from "./navbar.module.scss";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import Modal from "../modal/Modal";
 import { FaUser } from "react-icons/fa";
+import styles from "./navbar.module.scss";
 
 function Navbar() {
   const [show, handleShow] = useState(false);
   const [open, setOpen] = useState(false);
+  const [modal, setModal] = useState(false);
 
   const scrollHandler = () => {
     if (window.scrollY > 40) {
@@ -23,8 +25,12 @@ function Navbar() {
     };
   }, []);
 
+  const handleClick = () => {
+    setModal(!modal);
+  };
+
   return (
-    <div className={`${styles.container} ${show ? styles.navbar_scroll : ""}`}>
+    <div className={`${styles.container} ${show && styles.navbar_scroll}`}>
       <nav className={styles.navbar}>
         <span className={styles.logo}>
           <Link to="/">Milkat</Link>
@@ -33,12 +39,14 @@ function Navbar() {
           <a href="/prediction">Price-Prediction</a>
           <a href="/contact">Contact</a>
           <a href="/about">About</a>
-          <div className={styles.user}>
-            <FaUser className={styles.icon} />
-            <a href="/login" className={styles.login}>
-              Login
-            </a>
-          </div>
+
+          <button onClick={handleClick} className={styles.userBtn}>
+            <div className={styles.user}>
+              <FaUser className={styles.icon} />
+              <span className={styles.login}>Login</span>
+            </div>
+          </button>
+          {modal && <Modal modal={modal} setModal={setModal} />}
         </div>
 
         {!open && (
@@ -64,12 +72,23 @@ function Navbar() {
 
         {open && (
           <div className={styles.mobile_links}>
-            <div className={styles.user}>
+            {/* <div className={styles.user}>
+              <button onClick={handleClick}>
+                <FaUser className={styles.icon} />
+                <span className={styles.login}>Login</span>
+              </button>
               <FaUser className={styles.icon} />
               <a href="/login" className={styles.login}>
                 Login
               </a>
-            </div>
+            </div> */}
+            <button onClick={handleClick} className={styles.userBtn}>
+              <div className={styles.user}>
+                <FaUser className={styles.icon} />
+                <span className={styles.login}>Login</span>
+              </div>
+            </button>
+            {modal && <Modal modal={modal} setModal={setModal} />}
             <a href="/prediction" onClick={() => setOpen(false)}>
               Price Prediction
             </a>

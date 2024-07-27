@@ -8,6 +8,7 @@ import Listup from "./pages/listup/Listup";
 import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
 import Prediction from "./pages/prediction/Prediction";
+import { ToastContainer } from "react-toastify";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
@@ -25,6 +26,18 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<Home />} />
           </Routes>
+          <ToastContainer
+            position="top-right"
+            autoClose={1500}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover={false}
+            theme="colored"
+          />
         </BrowserRouter>
       </div>
       <Footer />
