@@ -23,6 +23,23 @@
     input[type=file]{
         border: none;
     }
+
+    select{
+        height: 3rem;
+        font-size: $fzi;
+        border: 1px solid var(--border);
+        width: 100%;
+        border-radius: 0.5rem;
+        padding-left: 0.5rem;
+    }
+}
+
+@mixin label_design($fs: 1.2rem){
+    .label{
+        color: var(--lighttext);
+        font-size: $fs;
+        padding-bottom: 0.5rem;
+    }
 }
 
 .container{
@@ -75,8 +92,38 @@
     border-radius: 1rem;
     // box-shadow: 0 0 8px #ddd;
 
+    .timeslot{
+        // padding-bottom: 0.5rem;
+        @include label_design();
+
+        .warning{
+            width: 17vw;
+            font-size: 0.9rem;
+            color: coral;
+            margin-bottom: 0.5rem
+        }
+
+        .anytime_checkbox{
+            color:var(--lighttext)
+        }
+    }
+
     .formGroup{
         @include alignment();
+
+        .error{
+            font-size: 1rem;
+            color: red;
+        }
+
+        .inputGroup{
+            display: flex;
+            gap: 0.5rem;
+
+            .icon{
+                padding-top: 0.7rem;
+            }
+        }
     }
 
 
@@ -93,7 +140,7 @@
         background-color: var(--btn);
     }
     
-
+    
 
     .button{
         width: 100%;
@@ -109,6 +156,47 @@
         margin-top: 1rem;
         margin-bottom: 2rem;
     }
+
+    .postcodes{
+        margin-top: 0.1rem;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    // .loading {
+    //     // position: absolute;
+    //     top: 100%;
+    //     left: 0;
+    //     right: 0;
+    //     padding: 8px;
+    //     background: white;
+    //     border: 1px solid #ccc;
+    //     // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    //   }
+        
+    //   .suggestionsDropdown {
+    //     position: absolute;
+    //     top: 100%;
+    //     left: 0;
+    //     right: 0;
+    //     background: white;
+    //     border: 1px solid #ccc;
+    //     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    //     max-height: 200px;
+    //     width: 100%;
+    //     margin: auto;
+    //     overflow-y: auto;
+    //     z-index: 1000; /* Ensure dropdown is above other elements */
+    //   }
+      
+    //   .suggestionItem {
+    //     padding: 8px;
+    //     cursor: pointer;
+    //   }
+      
+    //   .suggestionItem:hover {
+    //     background-color: #f0f0f0;
+    //   }
 }
 
 /*CSS breakpoints*/
@@ -121,13 +209,33 @@
     .heading_container{
         padding: 1rem;
     }
+    .content{
+        .error{
+            font-size: 0.9rem;
+        }
+    }
 }
 
 @media (max-width: 640px){
     .content{
+
+        .timeslot{
+            // padding: 0.5rem 0;
+            @include label_design(1rem);
+
+            .warning{
+                width: 50vw;
+                font-size: 0.8rem;
+            }
+        }
+
         .formGroup{
             @include alignment(1.1rem, 1rem);
-        }
+
+            .error{
+                font-size: 0.8rem;
+            }
+        }        
     }
 
     .heading{
@@ -150,9 +258,23 @@
     }
 
     .content{
-        .formGroup{
-            @include alignment(1rem, 0.9rem);
+
+        .timeslot{
+            @include label_design(0.9rem);
+
+            .warning{
+                width: 70vw;
+                font-size: 0.6rem;
+                margin-bottom: 0;
+            }
         }
 
+        .formGroup{
+            @include alignment(1rem, 0.9rem);
+            
+            .error{
+                font-size: 0.7rem;
+            }
+        }
     }
 }

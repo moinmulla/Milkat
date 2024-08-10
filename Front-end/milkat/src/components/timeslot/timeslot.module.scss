@@ -1,0 +1,33 @@
+.container{
+    padding-top: 10rem;
+}
+
+.noTime{
+    font-size: 1.2rem;
+    font-weight: 400;
+    color:var(--border)
+}
+
+.gridContainer{
+    margin-bottom: 1rem;
+}
+
+.removeIcon{
+    cursor: pointer;
+    color: red;
+    padding-top: 0.7rem;
+}
+
+/*CSS breakpoints*/
+
+@media (max-width: 768px) {
+    .noTime{
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 475px) {
+    .noTime{
+        font-size: 0.9rem;
+    }
+}

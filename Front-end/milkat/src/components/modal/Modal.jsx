@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useContext } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import SignUp from "../signUp/SignUp";
@@ -41,7 +41,7 @@ function Modal({ modal, setModal }) {
       .max(20, "Must be 20 characters or less")
       .matches(
         /^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).*$/,
-        "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
+        "Must Contain One Uppercase, One Lowercase, One Number and one special case Character"
       ),
   });
 
@@ -64,7 +64,10 @@ function Modal({ modal, setModal }) {
         setModal(false);
       })
       .catch((error) => {
-        toast.error(error.response.data.message, {
+        let message = error.response
+          ? error.response.data.message
+          : "Something went wrong";
+        toast.error(message, {
           position: "top-right",
           autoClose: 2000,
           hideProgressBar: false,

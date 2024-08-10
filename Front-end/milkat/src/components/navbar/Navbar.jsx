@@ -1,14 +1,16 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import Modal from "../modal/Modal";
 import { FaUser } from "react-icons/fa";
+import { LoginContext } from "../../hooks/LoginContext";
 import styles from "./navbar.module.scss";
 
 function Navbar() {
   const [show, handleShow] = useState(false);
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(false);
+  const { login } = useContext(LoginContext);
 
   const scrollHandler = () => {
     if (window.scrollY > 40) {
@@ -43,7 +45,9 @@ function Navbar() {
           <button onClick={handleClick} className={styles.userBtn}>
             <div className={styles.user}>
               <FaUser className={styles.icon} />
-              <span className={styles.login}>Login</span>
+              <span className={styles.login}>
+                {login == "Login" ? "Login" : "Hi " + login}
+              </span>
             </div>
           </button>
           {modal && <Modal modal={modal} setModal={setModal} />}
@@ -85,7 +89,9 @@ function Navbar() {
             <button onClick={handleClick} className={styles.userBtn}>
               <div className={styles.user}>
                 <FaUser className={styles.icon} />
-                <span className={styles.login}>Login</span>
+                <span className={styles.login}>
+                  {login == "Login" ? "Login" : "Hi " + login}
+                </span>
               </div>
             </button>
             {modal && <Modal modal={modal} setModal={setModal} />}
