@@ -36,6 +36,9 @@ app.use(cors({
 // app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());
+
+let G_EMAIL = "a@b.com"
 
 const pool = mysql2.createPool({
     host: process.env.DB_HOST,
@@ -49,6 +52,72 @@ const hashPassword = async (password) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     return hashedPassword;
 };
+
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.token||"abcd";
+    
+    try{
+        if (token==="abcd") {
+            return res.status(401).json({ success: false, message: 'Unauthorized: Access token missing' });
+        }
+
+        const decrypted_token = CryptoJS.AES.decrypt(token, process.env.CRYPTO_SECRET).toString(CryptoJS.enc.Utf8);
+        const email_temp = decrypted_token.match(new RegExp(`email=([^;]+)`));
+        const token_temp = decrypted_token.match(new RegExp(`token=([^;]+)`));
+
+        const email = email_temp[1];
+        G_EMAIL = email;
+        const token1 = token_temp[1];
+
+        pool.query(`SELECT * FROM user WHERE email = ?`, [email],async  (err, result, fields) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: "Mysql email search error" });
+            }
+            if (result.length == 0) {
+                res.clearCookie("token");
+                res.status(401).json({ success: false, message: 'Already logged in into other device' });
+                res.end();
+            } else {
+                if(result[0].token === token){
+                    await jwt.verify(token1, process.env.JWT_SECRET, (err, decode) => {
+                        if (err) {
+                            return res.status(401).json({ success: false, message: 'Unauthorized: Invalid access token' });
+                        }else{
+                            if(Date.now()>=(decode.exp*1000)){
+                                res.clearCookie("token");
+                                res.status(401).json({ success: false, message: 'Unauthorized: Token expired' });
+                                res.end();
+
+                                pool.query(`UPDATE user SET token=null WHERE email = ?`, [email], (err1, result1, fields1) => {
+                                    if(err1){
+                                        console.log("Error fetching the data from database");
+                                    }
+                                    if(result1.length==0){
+                                        console.log("No data found");
+                                    }
+                                    else{
+                                        console.log("Token removed");
+                                    }
+                                });
+                            }
+                            next();
+                        }
+                        
+                    });
+                    
+                }else{
+                    console.log("cookie dont matched2");
+                    res.clearCookie("token");
+                    res.status(401).json({ success: false, message: 'Already logged in into other device' });
+                    res.end();
+                }
+            }
+        });
+    }catch(error){
+        console.error('Decryption error:', error);
+        return res.status(401).json({ error: 'Unauthorized: Invalid access token' });
+    }
+}
 
 
 app.post("/register", async (req, res) => {
@@ -142,7 +211,7 @@ app.post("/login", async (req, res) => {
     }
 })
 
-app.post("/listup", upload.any("images") , (req, res) => {
+app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     const images = req.files;
     const { headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
     
@@ -151,8 +220,11 @@ app.post("/listup", upload.any("images") , (req, res) => {
     console.log(req.body);
 
 
+
     try{
-        pool.query("INSERT INTO properties (email,headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", ['moinuddinmulla100@gmail.com',headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
+        if(G_EMAIL == "a@b.com")
+            throw Error("Not authorized");
+        pool.query("INSERT INTO properties (email,headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql insert property error" });
@@ -219,11 +291,86 @@ app.post("/listup", upload.any("images") , (req, res) => {
     }
 })
 
+app.get("/properties", (req, res) =>  {
+    const {postcode} = req.query;
+    try{
+        // pool.query(`SELECT * FROM properties where postcode="${postcode}"`,async (err1, result1, fields1) => {
+        //     if(err1){
+        //         console.log(err1);
+        //         return res.status(500).json({ success: false, message: "Mysql property search error" });
+        //     }
+        //     if(result1.length == 0){
+        //         return res.status(400).json({ success: true, message:"No properties found" });
+        //     }
+        //     const new_result = result1.map( property => {
+        //          pool.query(`SELECT path from images where pid = "${property.pid}"`, (err2, result2, fields2) => {
+        //             if(err2){
+        //                 console.log(err2);
+        //                 return res.status(500).json({ success: false, message: "Mysql property search error" });
+        //             }
+        //             property.paths = result2;
+        //             // console.log(property);
+        //         })
+        //     })
+        //     console.log(new_result);
+
+        //     return res.status(200).json({ success: true, properties: result1 });
+        //     // pool.query(`SELECT path from images where pid = "${result1[0].pid}"`, (err2, result2, fields2) => {
+        //     //     if(err2){
+        //     //         console.log(err2);
+        //     //         return res.status(500).json({ success: false, message: "Mysql property search error" });
+        //     //     }
+        //     //     result1.path = result2.path;
+        //     //     return res.status(200).json({ success: true, properties: result1 });
+        //     // })
+        // })
+
+
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(JSON_OBJECT('path', i.path, 'start_time', t.start_time, 'end_time', t.end_time, 'anytime', t.anytime))  FROM time_slots t JOIN images i  ON t.property_id = i.pid WHERE i.pid = p.pid) AS image_time_details FROM properties p where postcode="${postcode}"`, (err1, result1, fields1) => {
+            if(err1){
+                console.log(err1);
+                return res.status(500).json({ success: false, message: "Mysql property search error" });
+            }
+            if(result1.length == 0){
+                return res.status(400).json({ success: true, message:"No properties found" });
+            }
+            // console.log(result1);
+            return res.status(200).json({ success: true, properties: result1 });
+        })
+    }
+    catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
+app.get("/check",verifyToken, (req, res) => {
+    return res.status(200).json({ success: true, message: "Done" });
+})
+
+// app.get("/propertie", (req, res) => {
+//     const postcode = req.query.postcode;
+//     pool.query(`SELECT 
+//     GROUP_CONCAT(CONCAT(i.path, ' | ', t.start_time, ' | ', t.end_time, ' | ', t.anytime) SEPARATOR '; ') AS image_time_details
+// FROM 
+//     images i 
+// JOIN 
+//     time_slots t ON t.property_id = i.pid 
+// WHERE 
+//     i.pid = 107`, (err, result, fields) => {
+//         if(err){
+//             console.log(err);
+//             return res.status(500).json({ success: false, message: "Mysql property search error" });
+//         }
+//         console.log(result);
+//         return res.status(200).json({ success: true, properties: result });
+//     })
+// })
+
 
 app.use((error, req, res, next) => {
     const message = error.message || "Internal Server Error";
     const statusCode = error.statusCode || 500;
-    console.log("Message:***********************",error.field);
+    console.log("Message:***********************",error);
 })
 
 // function funct(){ 
@@ -242,13 +389,10 @@ app.post("/postcode", async (req, res) => {
     let {postcode} = req.body;
 
     if(postcode){
-        // res.status(200).json({ success: true, message: {suggestions:[{address:"73 Manitoba road",url:"hello"},{address:"74 Manitoba road",url:"hello"}]} });
         await axios.request({
             method: "get",
             url: `https://api.getAddress.io/autocomplete/${postcode}?api-key=${process.env.GET_ADDRESS_API_KEY}`
         }).then((response) => {
-            console.log("Postcode:",postcode.toString());
-            // console.log(response.data);
             return res.status(200).json({ success: true, message: response.data });
         }).catch((error) => {
             return res.status(500).json({ success: false, message: error });
@@ -261,7 +405,26 @@ app.post("/postcode", async (req, res) => {
 
 app.post("/postcode_address", async (req, res) => {
     let {url} = req.body;
-    // console.log(url);
+   
+    if(url){
+        await axios.request({
+            method: "get",
+            url: "https://api.getAddress.io/"+url+"?api-key="+process.env.GET_ADDRESS_API_KEY
+        }).then((response) => {
+            return res.status(200).json({ success: true, message: response.data });
+        }).catch((error) => {   
+            return res.status(500).json({ success: false, message: error });
+        })
+    }else{  
+        console.log("No url");
+    }
+})
+
+app.listen(port, () => console.log(`Server running on port ${port}!`))          
+
+
+
+ // console.log(url);
 
     // const response ={
     //     "postcode": "LE5 3SA",
@@ -290,20 +453,3 @@ app.post("/postcode_address", async (req, res) => {
     //     "country": "England",
     //     "residential": false
     // };
-
-    if(url){
-        // res.status(200).json({ success: true, message: response });
-        await axios.request({
-            method: "get",
-            url: "https://api.getAddress.io/"+url+"?api-key="+process.env.GET_ADDRESS_API_KEY
-        }).then((response) => {
-            return res.status(200).json({ success: true, message: response.data });
-        }).catch((error) => {   
-            return res.status(500).json({ success: false, message: error });
-        })
-    }else{  
-        console.log("No url");
-    }
-})
-
-app.listen(port, () => console.log(`Server running on port ${port}!`))          

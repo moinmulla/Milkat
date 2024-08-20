@@ -4,12 +4,14 @@ import { Link } from "react-router-dom";
 import Modal from "../modal/Modal";
 import { FaUser } from "react-icons/fa";
 import { LoginContext } from "../../hooks/LoginContext";
+import axios from "../../utils/axios";
 import styles from "./navbar.module.scss";
 
 function Navbar() {
   const [show, handleShow] = useState(false);
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(false);
+  // const [loginText, setLogintext] = useState("Login");
   const { login } = useContext(LoginContext);
 
   const scrollHandler = () => {
@@ -27,8 +29,26 @@ function Navbar() {
     };
   }, []);
 
+  // useEffect(() => {
+  //   setLogintext(login);
+  // }, [login]);
+  // console.log(login);
+
   const handleClick = () => {
     setModal(!modal);
+  };
+
+  const handleUser = () => {
+    // setModal(!modal);
+    console.log("Clicked");
+    axios
+      .get("/check")
+      .then((res) => {
+        console.log(res.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
@@ -42,14 +62,28 @@ function Navbar() {
           <a href="/contact">Contact</a>
           <a href="/about">About</a>
 
-          <button onClick={handleClick} className={styles.userBtn}>
+          {/* <button onClick={handleClick} className={styles.userBtn}>
             <div className={styles.user}>
               <FaUser className={styles.icon} />
-              <span className={styles.login}>
-                {login == "Login" ? "Login" : "Hi " + login}
-              </span>
+              <span className={styles.login}>{login}</span>
             </div>
-          </button>
+          </button> */}
+
+          {login == "Login" ? (
+            <button onClick={handleClick} className={styles.userBtn}>
+              <div className={styles.user}>
+                <FaUser className={styles.icon} />
+                <span className={styles.login}>Login</span>
+              </div>
+            </button>
+          ) : (
+            <button onClick={handleUser} className={styles.userBtn}>
+              <div className={styles.user}>
+                <FaUser className={styles.icon} />
+                <span className={styles.login}>{"Hi " + login}</span>
+              </div>
+            </button>
+          )}
           {modal && <Modal modal={modal} setModal={setModal} />}
         </div>
 
@@ -86,14 +120,31 @@ function Navbar() {
                 Login
               </a>
             </div> */}
-            <button onClick={handleClick} className={styles.userBtn}>
+
+            {login == "Login" ? (
+              <button onClick={handleClick} className={styles.userBtn}>
+                <div className={styles.user}>
+                  <FaUser className={styles.icon} />
+                  <span className={styles.login}>Abcd</span>
+                </div>
+              </button>
+            ) : (
+              <button onClick={handleUser} className={styles.userBtn}>
+                <div className={styles.user}>
+                  <FaUser className={styles.icon} />
+                  <span className={styles.login}>{"Hi " + login}</span>
+                </div>
+              </button>
+            )}
+
+            {/* <button onClick={handleClick} className={styles.userBtn}>
               <div className={styles.user}>
                 <FaUser className={styles.icon} />
                 <span className={styles.login}>
                   {login == "Login" ? "Login" : "Hi " + login}
                 </span>
               </div>
-            </button>
+            </button> */}
             {modal && <Modal modal={modal} setModal={setModal} />}
             <a href="/prediction" onClick={() => setOpen(false)}>
               Price Prediction

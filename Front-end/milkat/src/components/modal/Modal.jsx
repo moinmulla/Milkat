@@ -5,11 +5,15 @@ import SignUp from "../signUp/SignUp";
 import axios from "../../utils/axios";
 import { toast } from "react-toastify";
 import { IoCloseOutline } from "react-icons/io5";
+import { LoginContext } from "../../hooks/LoginContext";
+import CryptoJS from "crypto-js";
 import styles from "./modal.module.scss";
 import "react-toastify/dist/ReactToastify.css";
 
 function Modal({ modal, setModal }) {
   const [signIn, setSignIn] = useState(true);
+
+  const { changeLogin, changeRole, changeToken } = useContext(LoginContext);
   const toggleModal = () => {
     setModal(!modal);
   };
@@ -62,6 +66,26 @@ function Modal({ modal, setModal }) {
           theme: "colored",
         });
         setModal(false);
+
+        const secret_key =
+          `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
+        const cookie_value = decodeURIComponent(document.cookie);
+
+        const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
+
+        const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
+
+        const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
+
+        const role = decrypted_token.match(new RegExp("role=([^;]+)"));
+        const token = decrypted_token.match(new RegExp("token=([^;]+)"));
+        const name = decrypted_token.match(new RegExp("name=([^;]+)"));
+
+        token[1] = CryptoJS.AES.encrypt(token[1], secret_key).toString();
+
+        changeLogin(name[1]);
+        changeRole(role[1]);
+        changeToken(token[1]);
       })
       .catch((error) => {
         let message = error.response

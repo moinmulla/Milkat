@@ -16,9 +16,10 @@ import { LoginProvider, LoginContext } from "./hooks/LoginContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const Protected_Route = ({ children }) => {
-  const { changeLogin } = useContext(LoginContext);
-  const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
+  const { login, role, token } = useContext(LoginContext);
+  // const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
 
+  console.log(role, token, role);
   if (!document.cookie) {
     setTimeout(() => {
       toast.error("Please login first", {
@@ -36,20 +37,25 @@ const Protected_Route = ({ children }) => {
     return <Home />;
   }
 
-  const cookie_value = decodeURIComponent(document.cookie);
+  // const cookie_value = decodeURIComponent(document.cookie);
 
-  const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
+  // const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
 
-  const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
+  // const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
 
-  const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
+  // const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
 
-  const role = decrypted_token.match(new RegExp("role=([^;]+)"));
-  const token = decrypted_token.match(new RegExp("token=([^;]+)"));
-  const name = decrypted_token.match(new RegExp("name=([^;]+)"));
-  console.log(name[1]);
+  // const role = decrypted_token.match(new RegExp("role=([^;]+)"));
+  // const token = decrypted_token.match(new RegExp("token=([^;]+)"));
+  // const name = decrypted_token.match(new RegExp("name=([^;]+)"));
 
-  changeLogin(name[1]);
+  const role1 = role;
+  const name1 = login;
+  const token1 = token;
+
+  console.log(role1, token1, name1);
+
+  // changeLogin(name[1]);
 
   // if (role && role[1] !== "admin" && children === <AdminDashboard />) {
   //   return children;
@@ -59,7 +65,7 @@ const Protected_Route = ({ children }) => {
   //   return children;
   // }
 
-  return token ? children : <Home />;
+  return token1 !== "" ? children : <Home />;
 };
 
 function App({ children }) {

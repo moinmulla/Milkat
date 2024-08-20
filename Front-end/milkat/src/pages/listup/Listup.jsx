@@ -200,7 +200,6 @@ function ListUp() {
         .then((res) => {
           setLoading(true);
           setPostcode(res.data.message);
-          console.log(res.data.message);
         })
         .catch((error) => {
           console.log(error);
