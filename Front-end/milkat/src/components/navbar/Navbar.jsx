@@ -125,7 +125,7 @@ function Navbar() {
               <button onClick={handleClick} className={styles.userBtn}>
                 <div className={styles.user}>
                   <FaUser className={styles.icon} />
-                  <span className={styles.login}>Abcd</span>
+                  <span className={styles.login}>Login</span>
                 </div>
               </button>
             ) : (

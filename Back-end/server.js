@@ -215,11 +215,6 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     const images = req.files;
     const { headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
     
-    // console.log("Images:",req.files);
-    // console.log("Time slots:",req.body.time_slots.length);?
-    console.log(req.body);
-
-
 
     try{
         if(G_EMAIL == "a@b.com")
@@ -268,7 +263,7 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                             width: 1200,
                             height: 800,
                             transformation: [
-                                {overlay: {font_family: "Arial", font_size: 100, text: "Milkat"}},
+                                {overlay: {font_family: "Arial", font_size: 250, text: "Milkat"}},
                                 {flags: "layer_apply", gravity: "south_east", y: "0.08", x: "0.08", opacity: 30},
                             ]
                         });
@@ -278,13 +273,14 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                                 console.log(err2);
                                 return res.status(500).json({ success: false, message: "Error uploading image" });
                             }
-                            return res.status(200).json({ success: true, message: "Property added successfully" });
                         })
                     }
                 );
                 
                 streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
             })
+
+            return res.status(200).json({ success: true, message: "Property added successfully" });
         });
     }catch(error){
         return res.status(500).json({ success: false, message: "Server error" });
@@ -292,41 +288,13 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
 })
 
 app.get("/properties", (req, res) =>  {
-    const {postcode} = req.query;
+    let {postcode} = req.query;
+
+    const postcode1 =postcode.replace(/^(.*)(.{3})$/,'$1 $2');
+    // console.log(postcode1);
     try{
-        // pool.query(`SELECT * FROM properties where postcode="${postcode}"`,async (err1, result1, fields1) => {
-        //     if(err1){
-        //         console.log(err1);
-        //         return res.status(500).json({ success: false, message: "Mysql property search error" });
-        //     }
-        //     if(result1.length == 0){
-        //         return res.status(400).json({ success: true, message:"No properties found" });
-        //     }
-        //     const new_result = result1.map( property => {
-        //          pool.query(`SELECT path from images where pid = "${property.pid}"`, (err2, result2, fields2) => {
-        //             if(err2){
-        //                 console.log(err2);
-        //                 return res.status(500).json({ success: false, message: "Mysql property search error" });
-        //             }
-        //             property.paths = result2;
-        //             // console.log(property);
-        //         })
-        //     })
-        //     console.log(new_result);
 
-        //     return res.status(200).json({ success: true, properties: result1 });
-        //     // pool.query(`SELECT path from images where pid = "${result1[0].pid}"`, (err2, result2, fields2) => {
-        //     //     if(err2){
-        //     //         console.log(err2);
-        //     //         return res.status(500).json({ success: false, message: "Mysql property search error" });
-        //     //     }
-        //     //     result1.path = result2.path;
-        //     //     return res.status(200).json({ success: true, properties: result1 });
-        //     // })
-        // })
-
-
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(JSON_OBJECT('path', i.path, 'start_time', t.start_time, 'end_time', t.end_time, 'anytime', t.anytime))  FROM time_slots t JOIN images i  ON t.property_id = i.pid WHERE i.pid = p.pid) AS image_time_details FROM properties p where postcode="${postcode}"`, (err1, result1, fields1) => {
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid) AS time_slots FROM properties p where postcode="${postcode1}"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });

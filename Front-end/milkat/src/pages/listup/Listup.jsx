@@ -90,7 +90,7 @@ function ListUp() {
     ]);
   };
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     console.log("Form data:", values);
     // console.log(timeSlots);
 
@@ -140,6 +140,7 @@ function ListUp() {
           progress: undefined,
           theme: "colored",
         });
+        resetForm();
         setTimeSlots([]);
       })
       .catch((error) => {
