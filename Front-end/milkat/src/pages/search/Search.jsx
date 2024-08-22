@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Select from "react-select";
 import SearchBar from "../../components/searchbar/SearchBar";
-import Select from "../../components/select/Select";
+// import Select from "../../components/select/Select";
+import { BsSortDown, BsSortDownAlt } from "react-icons/bs";
 import Card from "../../components/card/Card";
 import axios from "../../utils/axios";
 import styles from "./search.module.scss";
@@ -10,6 +12,29 @@ function Search() {
   const searchParams = useSearchParams();
   const postcode_temp = searchParams[0].get("q").toUpperCase();
   const [data, setData] = useState([]);
+
+  const options = [
+    {
+      value: "original",
+      label: <div>Original</div>,
+    },
+    {
+      value: "ascending",
+      label: (
+        <div className={styles.sort_value}>
+          <BsSortDownAlt className={styles.sort_icon} size={20} /> Ascending
+        </div>
+      ),
+    },
+    {
+      value: "descending",
+      label: (
+        <div className={styles.sort_value}>
+          <BsSortDown className={styles.sort_icon} size={20} /> Descending
+        </div>
+      ),
+    },
+  ];
 
   useEffect(() => {
     const fetch_data = async () => {
@@ -51,7 +76,9 @@ function Search() {
             </div>
             <div className={styles.filterSort}>
               <div className={styles.filter}>Filter</div>
-              <div className={styles.sort}>Sort</div>
+              <div className={styles.sort}>
+                <Select options={options} className={styles.select} />
+              </div>
             </div>
             <div className={styles.results}>
               <Card data={data} />

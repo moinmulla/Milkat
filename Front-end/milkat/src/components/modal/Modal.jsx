@@ -178,7 +178,7 @@ function Modal({ modal, setModal }) {
           ) : (
             <SignUp signIn={signIn} setSignIn={setSignIn} />
           )}
-          <hr />
+          <hr className={styles.hr} />
           <div className={styles.google}>
             <button type="button" className={styles.loginWithGoogleBtn}>
               Sign in with Google

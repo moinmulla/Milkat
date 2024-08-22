@@ -106,7 +106,7 @@ body.activeModal {
 
 }
 
-hr {
+.hr {
     border: none;
     border-top: 3px double #333;
     color: #333;
@@ -115,7 +115,7 @@ hr {
     height: 5px;
 }
 
-hr::after {
+.hr::after {
     background: #fff;
     content: 'Or login with';
     padding: 0 4px;

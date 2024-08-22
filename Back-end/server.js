@@ -213,13 +213,18 @@ app.post("/login", async (req, res) => {
 
 app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     const images = req.files;
-    const { headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
-    
+    const { headline,description,property_type,sale_rent,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
+    let postcode1 = postcode.replace(/^(.*)(.{3})$/,'$1 $2').toUpperCase();
+
+    let sale=0;
+    if(sale_rent == "sale"){
+        sale=1;
+    }
 
     try{
         if(G_EMAIL == "a@b.com")
             throw Error("Not authorized");
-        pool.query("INSERT INTO properties (email,headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
+        pool.query("INSERT INTO properties (email,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode1,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql insert property error" });
@@ -244,6 +249,11 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                 }
             })
 
+
+            /************** Uploading an image to cloudinary along with customizable watermark ****************************/
+
+
+            /*
             //uploading images to cloudinary
             images.map(async (file) => {
                 let cld_upload_stream = await cloudinary.uploader.upload_stream(
@@ -279,6 +289,43 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                 
                 streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
             })
+            */
+
+            /************** Uploading an image to cloudinary along with customizable watermark ****************************/
+
+
+
+            /************** Uploading an image to cloudinary using that image for watermark using picnie ****************************/
+
+            images.map(async (file) => {
+                await cloudinary.uploader.upload(file, {
+                    folder: "test",
+                })
+                .then(async (result_cloudinary) => {
+
+                    const data ={
+                        "project_id": 1630,
+                        "background_image_url":`${result_cloudinary.secure_url}`,
+                        "front_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724254464/test/kjizq7xvdpustn9zyrpa.png",
+                        "position":"bc",
+                        "image_max_width":"1200",
+                        "image_max_height":"800"
+                    }
+                
+                    await axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
+                        pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,response.data.url], (err3, result3, fields3) => {
+                            if(err3){   
+                                console.log(err3);
+                                return res.status(500).json({ success: false, message: "Error uploading image" });
+                                return true;
+                            }
+                        })
+                    })
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+            });
 
             return res.status(200).json({ success: true, message: "Property added successfully" });
         });
@@ -294,7 +341,7 @@ app.get("/properties", (req, res) =>  {
     // console.log(postcode1);
     try{
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid) AS time_slots FROM properties p where postcode="${postcode1}"`, (err1, result1, fields1) => {
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where postcode="${postcode1}"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });
@@ -311,7 +358,46 @@ app.get("/properties", (req, res) =>  {
     }
 })
 
+app.get("/property/:id", (req, res) => {
+    let {id} = req.params;
+
+    try{
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
+            if(err1){
+                console.log(err1);
+                return res.status(500).json({ success: false, message: "Mysql property search error" });
+            }
+            if(result1.length == 0){
+                return res.status(400).json({ success: true, message:"No property found" });
+            }
+            // console.log(result1);
+            return res.status(200).json({ success: true, property: result1 });
+        });
+    }
+    catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+
 app.get("/check",verifyToken, (req, res) => {
+
+    // const data ={
+    //     "project_id": 1630,
+    //     "background_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724242368/test/jerzhcjhni3pzgj2kaui.jpg",
+    //     "front_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724254464/test/kjizq7xvdpustn9zyrpa.png",
+    //     "position":"bc",
+    //     "image_max_width":"1200",
+    //     "image_max_height":"800"
+    // }
+
+    // axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
+    //     console.log(response.data.url);
+    //     // https://picnie.s3.ap-south-1.amazonaws.com/user_1392/project_1630/wm_3326_240821090444.jpg
+    //     // https://picnie.s3.ap-south-1.amazonaws.com/user_1392/project_1630/wm_7517_240821090946.jpg
+    // })
+
+
     return res.status(200).json({ success: true, message: "Done" });
 })
 

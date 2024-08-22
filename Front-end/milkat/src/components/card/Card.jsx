@@ -1,23 +1,27 @@
+import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Carousel from "react-bootstrap/Carousel";
 import { FaBath } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
+import { FaLink } from "react-icons/fa6";
 import styles from "./card.module.scss";
 
 const Cards = ({ data }) => {
+  const navigate = useNavigate();
+
   const formatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
     maximumSignificantDigits: 20,
   });
 
-  const handleClick = () => {
-    console.log("clicked");
+  const handleClick = (pid) => {
+    navigate(`/property/${pid}`);
   };
 
-  //   console.log("data", data);
+  // console.log("data"  , data);
   return (
     <div className={styles.container}>
       {data.map((item) => (
@@ -33,7 +37,7 @@ const Cards = ({ data }) => {
                         <img
                           className={`d-block w-100 ${styles.img}`}
                           src={image}
-                          alt="First slide"
+                          alt="Image not available"
                           height="300px"
                           key={index}
                         />
@@ -49,11 +53,31 @@ const Cards = ({ data }) => {
               )}
             </Carousel>
           </div>
-          <Card.Body onClick={handleClick}>
-            <Card.Title>{formatter.format(item.price)}</Card.Title>
+          <Card.Body onClick={() => handleClick(item.pid)}>
+            <div className={styles.top_title}>
+              <Card.Title>
+                {formatter.format(item.price)}
+                {!item.sale && " pcm"}
+              </Card.Title>
+              <div className={styles.sale_rent}>
+                {item.sale ? "Sale" : "Rent"}
+              </div>
+            </div>
+            {/* <Card.Title>
+              {formatter.format(item.price)}
+              {!item.sale && " pcm"}
+            </Card.Title> */}
+            <Card.Subtitle className="mb-2 text-muted">
+              {!item.sale && formatter.format(item.price / 4) + " pcw"}
+            </Card.Subtitle>
             <Card.Subtitle className="mb-2 text-muted">
               <div className={styles.subtitle}>
-                <div className={styles.headline}>{item.headline}</div>
+                <div className={styles.divider}>
+                  <div className={styles.headline}>{item.headline}</div>
+                  <div className={styles.link}>
+                    <FaLink size={25} />
+                  </div>
+                </div>
                 <div className={styles.details}>
                   <div className={styles.ind_details} title="Reception">
                     <GiSofa size={20} />

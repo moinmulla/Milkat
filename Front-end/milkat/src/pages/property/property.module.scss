@@ -1,0 +1,60 @@
+.container{
+
+    .content{
+        padding-top: 2rem;
+
+        .price{
+            
+            margin-bottom: 0.5rem;
+           .amount{
+                font-size: 2.5rem;
+                font-weight: 600;
+                margin-right: 0.5rem;
+           }
+
+           .month{
+                font-size: 1.5rem;
+                font-weight: 400;
+           }
+
+            .offer{
+                font-size: 1.5rem;
+                font-weight: 400;
+            }
+        }
+
+        .headline{
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .address{
+            font-size: 1.25rem;
+            font-weight: 400;
+        }
+
+        .details{
+            display: flex;
+            gap: 1.5rem;
+            font-size: 1.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .description{
+            display: flex;
+            flex-direction: column;
+
+
+            .desc_title{
+                font-size: 2rem;
+                font-weight: 500;
+                margin-bottom: 0.5rem;
+            }
+
+            .desc{
+                font-size: 1.1rem;
+                font-weight: 400;
+            }
+        }
+    }
+}

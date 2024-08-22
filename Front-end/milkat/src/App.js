@@ -9,6 +9,7 @@ import Listup from "./pages/listup/Listup";
 import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
 import Prediction from "./pages/prediction/Prediction";
+import Property from "./pages/property/Property";
 import Modal from "./components/modal/Modal";
 import { toast, ToastContainer } from "react-toastify";
 import CryptoJS from "crypto-js";
@@ -81,6 +82,7 @@ function App({ children }) {
               <Route path="/prediction" element={<Prediction />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/property/:pid" element={<Property />} />
               <Route
                 path="/listup"
                 element={

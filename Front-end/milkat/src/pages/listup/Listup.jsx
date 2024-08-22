@@ -31,6 +31,7 @@ function ListUp() {
     headline: "",
     description: "",
     property_type: "",
+    sale_rent: "",
     price: "",
     images: [],
     bathroom: "",
@@ -53,8 +54,9 @@ function ListUp() {
     description: Yup.string()
       .required("Required")
       .min(10, "Must be at least 10 characters")
-      .max(200, "Must be 200 characters or less"),
+      .max(600, "Must be 600 characters or less"),
     property_type: Yup.string().required("Required"),
+    sale_rent: Yup.string().required("Required"),
     price: Yup.string().required("Required"),
     images: Yup.array()
       .required("Required")
@@ -71,10 +73,7 @@ function ListUp() {
     address_line1: Yup.string().required("Required"),
     town: Yup.string()
       .required("Required")
-      .matches(
-        /^[^\W\d_]+\.?(?:[-\s][^\W\d_]+\.?)*$/,
-        "Must be a valid street name"
-      ),
+      .matches(/^[^\W\d_]+\.?(?:[-\s][^\W\d_]+\.?)*$/, "Must be a valid town"),
     // door_number: Yup.string().required("Required"),
     location: Yup.string().matches(
       /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/,
@@ -301,6 +300,28 @@ function ListUp() {
                   </Field>
                   <ErrorMessage
                     name="property_type"
+                    className={styles.error}
+                    component="div"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="sale_rent" className={styles.label}>
+                    Sale/Rent*
+                  </label>
+                  <Field
+                    component="select"
+                    id="sale_rent"
+                    name="sale_rent"
+                    placeholder="Select property for sale/rent"
+                  >
+                    <option value="" disabled selected>
+                      Select property sale/rent
+                    </option>
+                    <option value="sale">Sale</option>
+                    <option value="rent">Rent</option>
+                  </Field>
+                  <ErrorMessage
+                    name="sale_rent"
                     className={styles.error}
                     component="div"
                   />
