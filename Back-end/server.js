@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
 const CryptoJS = require('crypto-js');
+const nodemailer = require("nodemailer");
 
 require('dotenv').config();
 const app = express();
@@ -46,6 +47,27 @@ const pool = mysql2.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE
 })
+
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // Use `true` for port 465, `false` for all other ports
+    auth: {
+      user: "milkatproperties@gmail.com",
+      pass: process.env.EMAIL_PASS,
+    },
+});
+
+const days = {
+    0: "Sunday",
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday",
+};
 
 const hashPassword = async (password) => {
     const saltRounds = 10;
@@ -362,7 +384,32 @@ app.get("/property/:id", (req, res) => {
     let {id} = req.params;
 
     try{
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
+        //delete expired time slots
+        pool.query(`SELECT * FROM time_slots where property_id="${id}"`, (err, result, fields) => {
+            if(err){
+                console.log(err);
+                // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+            }
+            if(result.length == 0){
+                console.log("No time slots found");
+                // return res.status(400).json({ success: true, message:"No time slots found" });
+            }
+            const today = new Date().getTime();
+            result.map((item) => {
+                const st_time = new Date(item.start_time).getTime();
+                if(today>=st_time){
+                    // pool.query(`DELETE FROM time_slots where time_slot_id="${item.time_slot_id}"`, (err1, result1, fields1) => {
+                    //     if(err1){
+                    //         console.log(err1);
+                    //         // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+                    //     }
+                    // })
+                }
+            })
+            // console.log(result);
+        })
+
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("tid",t.time_slot_id,"start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid AND t.used=0) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });
@@ -375,6 +422,60 @@ app.get("/property/:id", (req, res) => {
         });
     }
     catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+app.post("/booking", verifyToken,async (req, res) => {
+    let {tid, email, time_slots} = req.body;
+
+    console.log(time_slots[0].start_time);
+
+    try{
+        await transporter.sendMail({
+            from: `"Milkat Properties" <milkatproperties@gmail.com>`,
+            to: G_EMAIL,
+            subject: "Booking for the property veiwing slot ⏲",
+            text: `Time Slots: ${time_slots[0].start_time} to ${time_slots[0].end_time}`,
+            html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(time_slots[0].start_time).toLocaleDateString() + " " + days[new Date(time_slots[0].start_time).getDay()] + " : " + new Date(time_slots[0].start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }) + " to " + new Date(time_slots[0].end_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}</b><br/><br/> Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
+        });
+
+        await transporter.sendMail({
+            from: `"Milkat Properties" <milkatproperties@gmail.com>`,
+            to: email,
+            subject: "Booking for the property veiwing slot ⏲",
+            text: `Time Slots: ${time_slots[0].start_time} to ${time_slots[0].end_time}`,
+            html: `<i>This is to inform you that a booking has been confirmed for the property veiwing as per given time below with the client</i><br/><br/><b> Time Slot: ${new Date(time_slots[0].start_time).toLocaleDateString() + " " + days[new Date(time_slots[0].start_time).getDay()] + " : " + new Date(time_slots[0].start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }) + " to " + new Date(time_slots[0].end_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}</b><br/><br/> Contact the client for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
+        });
+
+        pool.query(`UPDATE time_slots SET used = 1 WHERE time_slot_id = ${tid}`, (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Mysql time slots tid update error" });
+            }
+             pool.query(`UPDATE user SET tid = ${tid} WHERE email = "${G_EMAIL}"`, (err1, result1, fields1) => {
+                if(err1){
+                    console.log(err1);
+                    return res.status(500).json({ success: false, message: "Mysql user tid update error" });
+                }
+            })
+        });
+
+        return res.status(200).json({ success: true, message: "Booking confirmed" });
+    }catch(error){
+        console.log(error);
         return res.status(500).json({ success: false, message: "Server error" });
     }
 });
@@ -400,6 +501,41 @@ app.get("/check",verifyToken, (req, res) => {
 
     return res.status(200).json({ success: true, message: "Done" });
 })
+
+app.get("/bookingdemo", (req, res) => {
+
+    const time={
+        tid: 1,
+        anytime: 0,
+        end_time: '2024-08-22 17:00:29.000000',
+        start_time: '2024-08-22 14:00:29.000000'
+      }
+    async function main() {
+        // send mail with defined transport object
+        const info = await transporter.sendMail({
+          from: '"Milkat Properties" <milkatproperties@gmail.com>', // sender address
+          to: "moinmulla100@gmail.com", // list of receivers
+          subject: "Booking for the property veiwing slot ⏲",
+            text: `Time Slots: ${time}`, // plain text body
+          html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(time.start_time).toLocaleDateString() + " " + days[new Date(time.start_time).getDay()] + " : " + new Date(time.start_time).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }) + " to " + new Date(time.end_time).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</b><br/><br/> Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
+        });
+      
+        console.log("Message sent: %s", info.messageId);
+        // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+      }
+
+      main().catch(console.error);
+
+    return res.status(200).json({ success: true, message: "Mail sent" });
+})
+
+
 
 // app.get("/propertie", (req, res) => {
 //     const postcode = req.query.postcode;

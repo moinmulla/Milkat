@@ -90,7 +90,7 @@ function Navbar() {
         {!open && (
           <img
             className={styles.menu_button}
-            src="./images/menu.svg"
+            src="/images/menu.svg"
             alt="menu"
             width={30}
             height={30}
@@ -100,7 +100,7 @@ function Navbar() {
         {open && (
           <img
             className={styles.menuButton}
-            src="./images/close.svg"
+            src="/images/close.svg"
             alt="close"
             width={30}
             height={30}

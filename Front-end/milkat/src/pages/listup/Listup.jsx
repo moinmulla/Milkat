@@ -293,7 +293,7 @@ function ListUp() {
                     </option>
                     <option value="Bungalow">Bungalows</option>
                     <option value="Detached">Detached</option>
-                    <option value="Semi-deteached">Semi-deteached</option>
+                    <option value="Semi-detached">Semi-detached</option>
                     <option value="Terraced">Terraced</option>
                     <option value="Flats">Flats</option>
                     <option value="Farms/land">Farms/land</option>

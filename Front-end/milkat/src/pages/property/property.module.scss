@@ -1,11 +1,38 @@
 .container{
+    background-color: var(--bg);
+    border-radius: 1rem;
+    box-shadow: 0 0 2rem #ddd;
+    padding: 2rem;
+
+    .images{
+        .img{
+            height: auto;
+        }
+    }
 
     .content{
         padding-top: 2rem;
 
+        .title{
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+
         .price{
             
             margin-bottom: 0.5rem;
+
+            .amount_container{
+                display: flex;
+                justify-content: space-between;
+
+                .bookmark{
+                    margin-right: 0.5rem;
+                }
+            }
+
            .amount{
                 font-size: 2.5rem;
                 font-weight: 600;
@@ -43,18 +70,156 @@
         .description{
             display: flex;
             flex-direction: column;
-
-
-            .desc_title{
-                font-size: 2rem;
-                font-weight: 500;
-                margin-bottom: 0.5rem;
-            }
-
+            
             .desc{
                 font-size: 1.1rem;
                 font-weight: 400;
             }
         }
+
+        .schedule{
+            .time_slots_title{
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+
+                .info_icon{
+                    margin-bottom: 0.3rem;
+                    margin-right: 0.3rem;
+                }
+            }
+            .time_slots{
+                display: grid;
+                grid-template-columns: auto auto auto auto;
+
+                .time_slot{
+                    cursor: pointer;
+                    padding: 1rem;
+                    margin-bottom: 0.5rem;
+                    border: 1px solid #ccc;
+                    box-shadow: 0.1rem 0.1rem 0.3rem #ddd;
+                    font-size: 1rem;
+                    border-radius: 1rem;
+                    width: max-content;
+                }
+
+                .time_slot:hover{
+                    background-color: #eee;
+                }
+
+            }
+        }
+    }
+    
+}
+
+/*CSS Breakpoints*/
+
+@media(max-width: 768px){
+
+    .container{
+    
+        .content{
+    
+            .title{
+                font-size: 1.5rem;
+            }
+    
+    
+            .price{
+            
+    
+               .amount{
+                    font-size: 2rem;
+               }
+    
+               .month{
+                    font-size: 1.2rem;
+               }
+    
+                .offer{
+                    font-size: 1.2rem;
+                }
+            }
+    
+            .headline{
+                font-size: 1.2rem;
+            }
+    
+            .address{
+                font-size: 1rem;
+            }
+    
+            .details{
+                flex-direction: column;
+                gap: 0.5rem;
+                font-size: 1.2rem;
+                margin-top: 0.5rem;
+            }
+    
+            .description{
+                display: flex;
+                flex-direction: column;
+                
+                .desc{
+                    font-size: 1.1rem;
+                    font-weight: 400;
+                }
+            }
+    
+            .schedule{
+                .time_slots_title{
+                    font-size: 1rem;
+                    margin-bottom: 0.5rem;
+    
+                    .info_icon{
+                        margin-bottom: 0.3rem;
+                        margin-right: 0.3rem;
+                    }
+                }
+                .time_slots{
+                    display: grid;
+                    grid-template-columns: auto auto auto auto;
+    
+                    .time_slot{
+                        cursor: pointer;
+                        padding: 1rem;
+                        margin-bottom: 0.5rem;
+                        border: 1px solid #ccc;
+                        box-shadow: 0.1rem 0.1rem 0.3rem #ddd;
+                        font-size: 1rem;
+                        border-radius: 1rem;
+                        width: max-content;
+                    }
+    
+                    .time_slot:hover{
+                        background-color: #eee;
+                    }
+    
+                }
+            }
+        }
     }
 }
+
+@media(max-width: 640px){
+    .container{
+        
+        .content{
+            .price{
+                .amount{
+                    font-size: 1.75rem;
+                }
+            }
+
+            .schedule{
+                .time_slots{
+                    grid-template-columns: auto;
+                }
+            }
+        }
+        
+    }
+}
+
+// @media(max-width: 475px){    
+// }

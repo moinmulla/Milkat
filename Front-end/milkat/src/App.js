@@ -20,7 +20,7 @@ const Protected_Route = ({ children }) => {
   const { login, role, token } = useContext(LoginContext);
   // const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
 
-  console.log(role, token, role);
+  // console.log(role, token, role);
   if (!document.cookie) {
     setTimeout(() => {
       toast.error("Please login first", {

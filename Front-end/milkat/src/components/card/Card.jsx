@@ -74,10 +74,12 @@ const Cards = ({ data }) => {
               <div className={styles.subtitle}>
                 <div className={styles.divider}>
                   <div className={styles.headline}>{item.headline}</div>
+
                   <div className={styles.link}>
                     <FaLink size={25} />
                   </div>
                 </div>
+                <div className={styles.property_type}>{item.property_type}</div>
                 <div className={styles.details}>
                   <div className={styles.ind_details} title="Reception">
                     <GiSofa size={20} />
