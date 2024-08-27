@@ -184,16 +184,23 @@ const Property = () => {
             <div className={styles.address}>{data.property_type}</div>
             <div className={styles.details}>
               <div className={styles.ind_details} title="Reception">
-                <GiSofa size={30} />
-                {data.reception} Reception
+                <GiSofa size={30} className={styles.icon} />
+                <div className={styles.details_text}>
+                  {data.reception} Reception
+                </div>
               </div>
               <div className={styles.ind_details} title="Bedroom">
-                <IoBed size={30} />
-                {data.bedroom} Bedrooms
+                <IoBed size={30} className={styles.icon} />
+                <div className={styles.details_text}>
+                  {/* {" "} */}
+                  {data.bedroom} Bedrooms
+                </div>
               </div>
               <div className={styles.ind_details} title="Bathroom">
-                <FaBath size={30} />
-                {data.bathroom} Bathrooms
+                <FaBath size={30} className={styles.icon} />
+                <div className={styles.details_text}>
+                  {data.bathroom} Bathrooms
+                </div>
               </div>
             </div>
             <hr />

@@ -480,6 +480,47 @@ app.post("/booking", verifyToken,async (req, res) => {
     }
 });
 
+app.post("/chat", verifyToken, (req, res) => {
+    const {postcode,comments} = req.body;
+    
+    pool.query(`SELECT uid FROM user WHERE email = ?`, [G_EMAIL], (err1, result1) => {
+        if (err1) {
+            console.log(err2);
+            return res.status(500).json({ success: false, message: "MySQL user lookup error" });
+        }
+
+        if (result1.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const uid = result1[0].uid;
+
+        // Then, insert the chat message
+        pool.query(
+            `INSERT INTO chats (postcode, comment, uid) VALUES (?, ?, ?)`,
+            [postcode, comments, uid],
+            (err2, result2) => {
+                if (err2) {
+                    console.log(err2);
+                    return res.status(500).json({ success: false, message: "MySQL chat error" });
+                }
+                return res.status(200).json({ success: true, message: "Chat sent" });
+            }
+        );
+    });
+
+})
+
+app.get("/chat_lookup", verifyToken, (req, res) => {
+    pool.query(`SELECT *, (SELECT name FROM user WHERE user.uid = chats.uid) AS name FROM chats`, (err, result, fields) => {
+        if(err){
+            console.log(err);
+            return res.status(500).json({ success: false, message: "Mysql chat lookup error" });
+        }
+        console.log(result);
+        return res.status(200).json({ success: true, message: result });
+    });
+})
 
 app.get("/check",verifyToken, (req, res) => {
 

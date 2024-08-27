@@ -65,6 +65,14 @@
             gap: 1.5rem;
             font-size: 1.25rem;
             margin-top: 0.5rem;
+
+            .ind_details{
+                display: flex;
+            }
+
+            .details_text{
+                margin-left: 0.3rem;
+            }
         }
 
         .description{
@@ -157,8 +165,6 @@
             }
     
             .description{
-                display: flex;
-                flex-direction: column;
                 
                 .desc{
                     font-size: 1.1rem;
@@ -178,22 +184,8 @@
                 }
                 .time_slots{
                     display: grid;
-                    grid-template-columns: auto auto auto auto;
+                    grid-template-columns: auto ;
     
-                    .time_slot{
-                        cursor: pointer;
-                        padding: 1rem;
-                        margin-bottom: 0.5rem;
-                        border: 1px solid #ccc;
-                        box-shadow: 0.1rem 0.1rem 0.3rem #ddd;
-                        font-size: 1rem;
-                        border-radius: 1rem;
-                        width: max-content;
-                    }
-    
-                    .time_slot:hover{
-                        background-color: #eee;
-                    }
     
                 }
             }
@@ -202,22 +194,88 @@
 }
 
 @media(max-width: 640px){
+
     .container{
-        
+    
         .content{
+    
+            .title{
+                font-size: 1.2rem;
+            }
+    
+    
             .price{
-                .amount{
+            
+    
+               .amount{
                     font-size: 1.75rem;
+               }
+    
+               .month{
+                    font-size: 1.1rem;
+               }
+    
+                .offer{
+                    font-size: 1.1rem;
                 }
             }
+    
+            .headline{
+                font-size: 1.1rem;
+            }
+    
+            .address{
+                font-size: 1rem;
+            }
+    
+            .details{
+                flex-direction: column;
+                gap: 0.5rem;
+                font-size: 1.1rem;
+                margin-top: 0.5rem;
 
+                
+
+                .details_text{
+                    margin-top: 0.2rem;
+                    margin-left: 0;
+                }
+
+                .icon{
+                    margin-right: 0.5rem;
+                    padding-top: 0.2rem;
+                }
+            }
+    
+            .description{
+                display: flex;
+                flex-direction: column;
+                
+                .desc{
+                    font-size: 1.1rem;
+                    font-weight: 400;
+                }
+            }
+    
             .schedule{
+                .time_slots_title{
+                    font-size: 1rem;
+    
+                    .info_icon{
+                        margin-bottom: 0.3rem;
+                        margin-right: 0.3rem;
+                    }
+                }
                 .time_slots{
-                    grid-template-columns: auto;
+                    display: grid;
+                    grid-template-columns: auto ;
+    
+                    .time_slot{
+                        font-size: 0.9rem;
+                    }
                 }
             }
         }
-        
     }
 }
 

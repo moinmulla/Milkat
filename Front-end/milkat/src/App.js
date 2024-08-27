@@ -10,6 +10,7 @@ import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
 import Prediction from "./pages/prediction/Prediction";
 import Property from "./pages/property/Property";
+import Chat from "./pages/chat/Chat";
 import Modal from "./components/modal/Modal";
 import { toast, ToastContainer } from "react-toastify";
 import CryptoJS from "crypto-js";
@@ -88,6 +89,14 @@ function App({ children }) {
                 element={
                   <Protected_Route>
                     <Listup />
+                  </Protected_Route>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <Protected_Route>
+                    <Chat />
                   </Protected_Route>
                 }
               />

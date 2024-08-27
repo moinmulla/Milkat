@@ -26,8 +26,8 @@ function Footer() {
               <a href="/prediction">
                 <li>House Price Prediction</li>
               </a>
-              <a href="#">
-                <li>3D View of Property</li>
+              <a href="/chat">
+                <li>Open Chat System</li>
               </a>
               <a href="#">
                 <li>Saved Properties</li>
