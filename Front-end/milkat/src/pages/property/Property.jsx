@@ -17,6 +17,7 @@ const Property = () => {
   const [loading, setLoading] = useState(true);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [saved, setSaved] = useState(false);
   const [value, setValue] = useState(0);
 
   const formatter = new Intl.NumberFormat("en-GB", {
@@ -65,6 +66,16 @@ const Property = () => {
         });
       } else {
         setIsConfirmed(true);
+        toast.info("Booking under process", {
+          position: "top-right",
+          autoClose: 1000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
         axios
           .post("/booking", {
             tid: selectedSlot.tid,
@@ -105,6 +116,94 @@ const Property = () => {
     }
   };
 
+  const handleSave = () => {
+    if (!document.cookie) {
+      toast.error("Please login first", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } else {
+      axios
+        .post("/save", { pid: pid })
+        .then((res) => {
+          setSaved(true);
+          toast.success(res.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+          //   forceUpdate();
+        })
+        .catch((err) => {
+          toast.error(err.response.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+        });
+    }
+  };
+
+  const handleUnsave = () => {
+    if (!document.cookie) {
+      toast.error("Please login first", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } else {
+      axios
+        .post("/unsave", { pid: pid })
+        .then((res) => {
+          setSaved(false);
+          toast.success(res.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+          //   forceUpdate();
+        })
+        .catch((err) => {
+          toast.error(err.response.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+        });
+    }
+  };
+
   useEffect(() => {
     const fetch_data = async () => {
       await axios
@@ -117,7 +216,26 @@ const Property = () => {
         .catch((err) => console.log(err));
     };
 
+    const fetch_saved_properties = async () => {
+      await axios
+        .post("/saved", { pid: pid })
+        .then((res) => {
+          console.log(res.data.message);
+          setSaved(res.data.message);
+          console.log(data);
+          //   setSavedProperties(res.data.saved_properties);
+        })
+        .catch((err) => {
+          setSaved(false);
+          console.log(err);
+        });
+    };
+
     fetch_data();
+
+    if (document.cookie) {
+      fetch_saved_properties();
+    }
   }, []);
 
   return (
@@ -165,10 +283,18 @@ const Property = () => {
                 <span className={styles.amount}>
                   {formatter.format(data.price)} {!data.sale && "pcm"}
                 </span>
-                {data.saved_properties ? (
-                  <FaBookmark size={30} className={styles.bookmark} />
+                {saved ? (
+                  <FaBookmark
+                    size={30}
+                    className={styles.bookmark}
+                    onClick={handleUnsave}
+                  />
                 ) : (
-                  <FaRegBookmark size={30} className={styles.bookmark} />
+                  <FaRegBookmark
+                    size={30}
+                    className={styles.bookmark}
+                    onClick={handleSave}
+                  />
                 )}
               </div>
               {!data.sale && (
@@ -212,7 +338,7 @@ const Property = () => {
             <div className={styles.schedule}>
               <span className={styles.title}>Schedule</span>
               {/* <div>{data.time_slots[0] && data.time_slots[0].start_time}</div> */}
-              {data.time_slots[0].anytime ? (
+              {data.time_slots && data.time_slots[0].anytime ? (
                 <div className={styles.anytime_details}>
                   <div className={styles.anytime}>
                     Email address of the owner is given below, please contact
@@ -230,43 +356,53 @@ const Property = () => {
                   </div>
                   <div className={styles.time_slots}>
                     {data.time_slots ? (
-                      data.time_slots.map((time, index) => (
-                        <div
-                          key={index}
-                          className={styles.time_slot}
-                          onClick={() => handleSelect(time)}
-                          style={{
-                            backgroundColor:
-                              selectedSlot === time ? "lightblue" : "",
-                          }}
-                        >
-                          {new Date(time.start_time).toLocaleDateString()}
-                          {", "}
-                          {days[new Date(time.start_time).getDay()]}
-                          {": "}
-                          {new Date(time.start_time).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                          -
-                          {new Date(time.end_time).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                      <>
+                        <div className={styles.time_slots_list}>
+                          {data.time_slots.map((time, index) => (
+                            <div
+                              key={index}
+                              className={styles.time_slot}
+                              onClick={() => handleSelect(time)}
+                              style={{
+                                backgroundColor:
+                                  selectedSlot === time ? "lightblue" : "",
+                              }}
+                            >
+                              {new Date(time.start_time).toLocaleDateString()}
+                              {", "}
+                              {days[new Date(time.start_time).getDay()]}
+                              {": "}
+                              {new Date(time.start_time).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                              -
+                              {new Date(time.end_time).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          ))}
                         </div>
-                      ))
+                        <Button
+                          onClick={handleConfirm}
+                          disabled={!selectedSlot ? true : null}
+                        >
+                          Confirm Selection
+                        </Button>
+                      </>
                     ) : (
                       <div className={styles.no_slots}>
-                        All time slots are booked for this property
+                        <i>
+                          All time slots are either booked or expired for this
+                          property
+                        </i>
                       </div>
                     )}
                   </div>
-                  <Button
-                    onClick={handleConfirm}
-                    disabled={!selectedSlot ? true : null}
-                  >
-                    Confirm Selection
-                  </Button>
                 </div>
               )}
             </div>

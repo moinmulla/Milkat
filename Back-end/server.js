@@ -358,12 +358,16 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
 
 app.get("/properties", (req, res) =>  {
     let {postcode} = req.query;
+    if(postcode.length < 3){
+        return res.status(400).json({ success: false, message: "Enter more than 3 characters" });
+    }
 
-    const postcode1 =postcode.replace(/^(.*)(.{3})$/,'$1 $2');
-    // console.log(postcode1);
+    const postcode1 = postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2');
+
+
     try{
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where postcode="${postcode1}"`, (err1, result1, fields1) => {
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where postcode like "${postcode1}%"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });
@@ -391,19 +395,19 @@ app.get("/property/:id", (req, res) => {
                 // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
             }
             if(result.length == 0){
-                console.log("No time slots found");
+                // console.log("No time slots found");
                 // return res.status(400).json({ success: true, message:"No time slots found" });
             }
             const today = new Date().getTime();
             result.map((item) => {
                 const st_time = new Date(item.start_time).getTime();
                 if(today>=st_time){
-                    // pool.query(`DELETE FROM time_slots where time_slot_id="${item.time_slot_id}"`, (err1, result1, fields1) => {
-                    //     if(err1){
-                    //         console.log(err1);
-                    //         // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
-                    //     }
-                    // })
+                    pool.query(`DELETE FROM time_slots where time_slot_id="${item.time_slot_id}" AND anytime!=1`, (err1, result1, fields1) => {
+                        if(err1){
+                            console.log(err1);
+                            // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+                        }
+                    })
                 }
             })
             // console.log(result);
@@ -417,7 +421,11 @@ app.get("/property/:id", (req, res) => {
             if(result1.length == 0){
                 return res.status(400).json({ success: true, message:"No property found" });
             }
-            // console.log(result1);
+            // console.log(result1.time_slots);
+            if(!result1.time_slots){
+                result1.time_slots = [{}];
+            }
+            
             return res.status(200).json({ success: true, property: result1 });
         });
     }
@@ -426,12 +434,57 @@ app.get("/property/:id", (req, res) => {
     }
 });
 
+app.post("/saved",verifyToken, (req, res) => {
+    let {pid} = req.body;
+    
+    pool.query(`SELECT * from user_saved_properties WHERE uid=(SELECT uid FROM user WHERE email="${G_EMAIL}") AND pid="${pid}"`, (err1, result1, fields1) => {
+        if(err1){
+            console.log(err1);
+            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+        }
+        if(result1.length == 0){
+            return res.status(400).json({ success: true, message:"Property not saved" });
+        }
+        return res.status(200).json({ success: true, message: true });
+    })
+})
+
+app.post("/save",verifyToken, (req, res) => {
+    let {pid} = req.body;
+    console.log(pid);
+
+    pool.query(`INSERT INTO user_saved_properties (pid, uid) VALUES ("${pid}", (SELECT uid FROM user WHERE email="${G_EMAIL}"))`, (err1, result1, fields1) => {
+        if(err1){
+            console.log(err1);
+            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+        }
+        return res.status(200).json({ success: true, message: "Property saved" });
+    })
+})
+
+app.post("/unsave",verifyToken, (req, res) => {
+    let {pid} = req.body;
+    console.log(pid);
+
+    pool.query(`DELETE FROM user_saved_properties WHERE pid="${pid}" AND uid=(SELECT uid FROM user WHERE email="${G_EMAIL}")`, (err1, result1, fields1) => {
+        if(err1){
+            console.log(err1);
+            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+        }
+        return res.status(200).json({ success: true, message: "Property unsaved" });
+    })
+})
+
 app.post("/booking", verifyToken,async (req, res) => {
     let {tid, email, time_slots} = req.body;
 
     console.log(time_slots[0].start_time);
 
     try{
+        if(G_EMAIL == email){
+            return res.status(400).json({ success: false, message: "You cannot book time slot for your own property" });
+        }
+
         await transporter.sendMail({
             from: `"Milkat Properties" <milkatproperties@gmail.com>`,
             to: G_EMAIL,
