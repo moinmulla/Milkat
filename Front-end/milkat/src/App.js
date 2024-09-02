@@ -11,13 +11,16 @@ import Contact from "./pages/contact/Contact";
 import Prediction from "./pages/prediction/Prediction";
 import Property from "./pages/property/Property";
 import Chat from "./pages/chat/Chat";
+import Dashboard from "./pages/dashboard/Dashboard";
+import AdminDashboard from "./pages/adminDashboard/AdminDashboard";
+import UserDashboard from "./pages/userDashboard/UserDashboard";
 import Modal from "./components/modal/Modal";
 import { toast, ToastContainer } from "react-toastify";
 import CryptoJS from "crypto-js";
 import { LoginProvider, LoginContext } from "./hooks/LoginContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const Protected_Route = ({ children }) => {
+const Protected_Route = ({ children, requiredRole }) => {
   const { login, role, token } = useContext(LoginContext);
   // const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
 
@@ -56,16 +59,17 @@ const Protected_Route = ({ children }) => {
   const token1 = token;
 
   console.log(role1, token1, name1);
-
+  console.log(requiredRole);
   // changeLogin(name[1]);
 
-  // if (role && role[1] !== "admin" && children === <AdminDashboard />) {
-  //   return children;
-  // }
+  // console.log("children: " + JSON.stringify(children));
+  if (role && role1 === "admin" && requiredRole === "property") {
+    return <AdminDashboard />;
+  }
 
-  // if (role && role[1] === "user" && children === <UserDashboard />) {
-  //   return children;
-  // }
+  if (role && role1 == "user" && requiredRole === "property") {
+    return <UserDashboard />;
+  }
 
   return token1 !== "" ? children : <Home />;
 };
@@ -100,15 +104,15 @@ function App({ children }) {
                   </Protected_Route>
                 }
               />
+              <Route
+                path="/dashboard"
+                element={
+                  <Protected_Route requiredRole="property">
+                    <Dashboard />
+                  </Protected_Route>
+                }
+              />
               {/* <Route
-              path="/admin_dashboard"
-              element={
-                <Protected_Route>
-                  <AdminDashboard />
-                </Protected_Route>
-              }
-            />
-            <Route
               path="/user_dashboard"
               element={
                 <Protected_Route>

@@ -1,15 +1,21 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Carousel from "react-bootstrap/Carousel";
-import { FaBath } from "react-icons/fa";
+import axios from "../../utils/axios";
+import { FaBath, FaTrashAlt } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
 import { FaLink } from "react-icons/fa6";
+import { toast } from "react-toastify";
 import styles from "./card.module.scss";
 
-const Cards = ({ data }) => {
+const Cards = ({ data, setCount }) => {
   const navigate = useNavigate();
+  const [link, setLink] = useState("");
+
+  console.log(data);
 
   const formatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -19,6 +25,59 @@ const Cards = ({ data }) => {
 
   const handleClick = (pid) => {
     navigate(`/property/${pid}`);
+  };
+
+  const handleCopy = async (e, value) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/property/${value}`
+    );
+    toast.info("Link copied", {
+      position: "bottom-left",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+  };
+
+  const handleDelete = async (e, value) => {
+    e.stopPropagation();
+    if (
+      window.confirm("Are you sure you want to delete this property?") === true
+    ) {
+      axios
+        .get("/deleteProperty", { params: { pid: value } })
+        .then((res) => {
+          console.log(res.data.message);
+          toast.success(res.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+          setCount((prev) => prev + 1);
+        })
+        .catch((err) => {
+          toast.error(err.response.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+        });
+    }
   };
 
   // console.log("data"  , data);
@@ -76,10 +135,29 @@ const Cards = ({ data }) => {
                   <div className={styles.headline}>{item.headline}</div>
 
                   <div className={styles.link}>
-                    <FaLink size={25} />
+                    <FaLink
+                      size={25}
+                      onClick={(e) => handleCopy(e, item.pid)}
+                    />
                   </div>
                 </div>
-                <div className={styles.property_type}>{item.property_type}</div>
+                {data.listedProperties ? (
+                  <div className={styles.divider}>
+                    <div className={styles.property_type}>
+                      {item.property_type}
+                    </div>
+                    <div className={styles.delink}>
+                      <FaTrashAlt
+                        size={25}
+                        onClick={(e) => handleDelete(e, item.pid)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.property_type}>
+                    {item.property_type}
+                  </div>
+                )}
                 <div className={styles.details}>
                   <div className={styles.ind_details} title="Reception">
                     <GiSofa size={20} />

@@ -1,5 +1,5 @@
-import React from "react";
 import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Modal from "../modal/Modal";
 import { FaUser } from "react-icons/fa";
@@ -8,6 +8,7 @@ import axios from "../../utils/axios";
 import styles from "./navbar.module.scss";
 
 function Navbar() {
+  const navigate = useNavigate();
   const [show, handleShow] = useState(false);
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(false);
@@ -41,14 +42,7 @@ function Navbar() {
   const handleUser = () => {
     // setModal(!modal);
     console.log("Clicked");
-    axios
-      .get("/check")
-      .then((res) => {
-        console.log(res.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    navigate("/dashboard");
   };
 
   return (
@@ -80,7 +74,9 @@ function Navbar() {
             <button onClick={handleUser} className={styles.userBtn}>
               <div className={styles.user}>
                 <FaUser className={styles.icon} />
-                <span className={styles.login}>{"Hi " + login}</span>
+                <span className={styles.login}>
+                  {"Hi " + login.split(" ")[0]}
+                </span>
               </div>
             </button>
           )}
@@ -132,7 +128,9 @@ function Navbar() {
               <button onClick={handleUser} className={styles.userBtn}>
                 <div className={styles.user}>
                   <FaUser className={styles.icon} />
-                  <span className={styles.login}>{"Hi " + login}</span>
+                  <span className={styles.login}>
+                    {"Hi " + login.split(" ")[0]}
+                  </span>
                 </div>
               </button>
             )}

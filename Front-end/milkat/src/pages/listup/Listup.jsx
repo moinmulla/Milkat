@@ -50,7 +50,7 @@ function ListUp() {
     headline: Yup.string()
       .required("Required")
       .min(10, "Must be at least 10 characters")
-      .max(30, "Must be 30 characters or less"),
+      .max(50, "Must be 50 characters or less"),
     description: Yup.string()
       .required("Required")
       .min(10, "Must be at least 10 characters")

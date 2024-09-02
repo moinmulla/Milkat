@@ -1,0 +1,83 @@
+.container{
+    .heading{
+        font-size: 1.5rem;
+    }
+
+    .title{
+        font-size: 1.5rem;
+        font-weight: 500;
+    }
+
+    .content{
+        .heading{
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin: 1rem 0 0.5rem 0;
+        }
+
+        .no_properties{
+            font-size: 1.25rem;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .logout{
+            margin-top: 1.5rem;
+        }
+    }
+}
+
+/*CSS breakpoints*/
+
+@media(max-width: 768px){
+    .container{
+        .heading{
+            font-size: 1.3rem;
+        }
+
+        .title{
+            font-size: 1.3rem;
+        }
+
+        .content{
+            .heading{
+                font-size: 1.3rem;
+            }
+
+            .no_properties{
+                font-size: 1.2rem;
+            }
+
+            .logout{
+                margin-top: 1.5rem;
+            }
+        }
+    }
+}
+
+@media(max-width: 475px){
+    .container{
+        .heading{
+            font-size: 1rem;
+        }
+
+        .title{
+            font-size: 1rem;
+        }
+
+        .content{
+            .heading{
+                font-size: 1rem;
+            }
+
+            .no_properties{
+                font-size: 0.9rem;
+            }
+
+            .logout{
+                margin-top: 2rem;
+                margin-bottom: 3rem;
+            }
+        }
+    }
+}

@@ -3,6 +3,8 @@ import { Carousel } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import axios from "../../utils/axios";
+import Googlemaps from "../../components/googlemaps/Googlemaps";
+import Nearby from "../../components/nearby/Nearby";
 import { FaBath } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
@@ -19,6 +21,7 @@ const Property = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [saved, setSaved] = useState(false);
   const [value, setValue] = useState(0);
+  let maps_props;
 
   const formatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -210,6 +213,11 @@ const Property = () => {
         .get(`/property/${pid}`)
         .then((res) => {
           console.log(res.data.property);
+          maps_props = {
+            location: res.data.property[0].location,
+            address: res.data.property[0].address_line1,
+          };
+          console.log(maps_props);
           setData(res.data.property[0]);
           setLoading(false);
         })
@@ -406,9 +414,24 @@ const Property = () => {
                 </div>
               )}
             </div>
-          </div>
 
-          <hr />
+            <hr />
+            <div>
+              <div className={styles.nearby}>
+                <span className={styles.title}>
+                  Nearby places within 1 mile of area
+                </span>
+              </div>
+              <Nearby location={data.location} />
+            </div>
+
+            <hr />
+            <div>
+              <Googlemaps
+                props={{ address: data.address_line1, location: data.location }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </>

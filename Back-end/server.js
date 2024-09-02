@@ -194,7 +194,8 @@ app.post("/login", async (req, res) => {
                         role = "user";
                     }
 
-                    const name = result[0].name.split(' ')[0];
+                    // const name = result[0].name.split(' ')[0];
+                    const name = result[0].name;
 
                     const token = jwt.sign({ email: email, role: role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -233,10 +234,26 @@ app.post("/login", async (req, res) => {
     }
 })
 
+app.get("/logout", verifyToken, (req, res) => {
+    res.clearCookie("token");
+    try{
+        pool.query(`UPDATE user SET token = NULL WHERE email = ?`, [G_EMAIL], (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            return res.status(200).json({ success: true, message: "Logged out successfully" });
+        })
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
 app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     const images = req.files;
     const { headline,description,property_type,sale_rent,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
-    let postcode1 = postcode.replace(/^(.*)(.{3})$/,'$1 $2').toUpperCase();
+    const postcode1 = postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();
+    console.log(postcode1);
 
     let sale=0;
     if(sale_rent == "sale"){
@@ -246,114 +263,196 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     try{
         if(G_EMAIL == "a@b.com")
             throw Error("Not authorized");
-        pool.query("INSERT INTO properties (email,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode1,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
-            if(err1){
-                console.log(err1);
-                return res.status(500).json({ success: false, message: "Mysql insert property error" });
+
+        pool.query(`SELECT admin From user where email=?`, [G_EMAIL], (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Mysql property search error" });
             }
-            console.log(result1.insertId);
-
-            const insert_id = result1.insertId;
-            
-            //inserting time slots into time_slots table
-            let time_slots1=[];
-            if(req.body.time_slots.length>0){
-                const time_slots = JSON.parse(req.body.time_slots);
-                time_slots1 = time_slots.map(obj=>[insert_id,new Date(obj.start),new Date(obj.end),0]);
-            }else{
-                time_slots1 =[[insert_id,null,null,1]];
+            if(result.length == 0){
+                return res.status(400).json({ success: true, message:"No user found" });
             }
-
-            pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [time_slots1], (err2, result2, fields2) => {
-                if(err2){   
-                    console.log(err2);
-                    return res.status(500).json({ success: false, message: "Error inserting time slots" });
-                }
-            })
-
-
-            /************** Uploading an image to cloudinary along with customizable watermark ****************************/
-
-
-            /*
-            //uploading images to cloudinary
-            images.map(async (file) => {
-                let cld_upload_stream = await cloudinary.uploader.upload_stream(
-                    {
-                      folder: "test"
-                    },
-                    async(err1,result1)=>{
-                        if(err1){
-                            console.log(err1);
+            if(result[0].admin == 1){
+                pool.query("INSERT INTO properties (email,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode1,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
+                    if(err1){
+                        console.log(err1);
+                        return res.status(500).json({ success: false, message: "Mysql insert property error" });
+                    }
+                    console.log(result1.insertId);
+        
+                    const insert_id = result1.insertId;
+                    
+                    //inserting time slots into time_slots table
+                    let time_slots1=[];
+                    if(req.body.time_slots &&req.body.time_slots.length>0){
+                        const time_slots = JSON.parse(req.body.time_slots);
+                        time_slots1 = time_slots.map(obj=>[insert_id,new Date(obj.start),new Date(obj.end),0]);
+                    }else{
+                        time_slots1 =[[insert_id,null,null,1]];
+                    }
+        
+                    pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [time_slots1], (err2, result2, fields2) => {
+                        if(err2){   
+                            console.log(err2);
+                            return res.status(500).json({ success: false, message: "Error inserting time slots" });
                         }
-    
-                        // Transform the image: auto-crop to square aspect_ratio
-                        const autoCropUrl = await cloudinary.url(result1.public_id, {
-                            // background:"gen_fill"
-                            crop: 'auto_pad',
-                            gravity: 'auto',
-                            width: 1200,
-                            height: 800,
-                            transformation: [
-                                {overlay: {font_family: "Arial", font_size: 250, text: "Milkat"}},
-                                {flags: "layer_apply", gravity: "south_east", y: "0.08", x: "0.08", opacity: 30},
-                            ]
-                        });
-                
-                        pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,autoCropUrl], (err2, result2, fields2) => {
-                            if(err2){   
-                                console.log(err2);
-                                return res.status(500).json({ success: false, message: "Error uploading image" });
-                            }
-                        })
-                    }
-                );
-                
-                streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
-            })
-            */
-
-            /************** Uploading an image to cloudinary along with customizable watermark ****************************/
-
-
-
-            /************** Uploading an image to cloudinary using that image for watermark using picnie ****************************/
-
-            images.map(async (file) => {
-                await cloudinary.uploader.upload(file, {
-                    folder: "test",
-                })
-                .then(async (result_cloudinary) => {
-
-                    const data ={
-                        "project_id": 1630,
-                        "background_image_url":`${result_cloudinary.secure_url}`,
-                        "front_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724254464/test/kjizq7xvdpustn9zyrpa.png",
-                        "position":"bc",
-                        "image_max_width":"1200",
-                        "image_max_height":"800"
-                    }
-                
-                    await axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
-                        pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,response.data.url], (err3, result3, fields3) => {
-                            if(err3){   
-                                console.log(err3);
-                                return res.status(500).json({ success: false, message: "Error uploading image" });
-                                return true;
-                            }
-                        })
                     })
-                })
-                .catch((error) => {
-                    console.log(error);
+        
+        
+                    /************** Uploading an image to cloudinary along with customizable watermark ****************************/
+        
+        
+                    /*
+                    //uploading images to cloudinary
+                    images.map(async (file) => {
+                        let cld_upload_stream = await cloudinary.uploader.upload_stream(
+                            {
+                              folder: "test"
+                            },
+                            async(err1,result1)=>{
+                                if(err1){
+                                    console.log(err1);
+                                }
+            
+                                // Transform the image: auto-crop to square aspect_ratio
+                                const autoCropUrl = await cloudinary.url(result1.public_id, {
+                                    // background:"gen_fill"
+                                    crop: 'auto_pad',
+                                    gravity: 'auto',
+                                    width: 1200,
+                                    height: 800,
+                                    transformation: [
+                                        {overlay: {font_family: "Arial", font_size: 250, text: "Milkat"}},
+                                        {flags: "layer_apply", gravity: "south_east", y: "0.08", x: "0.08", opacity: 30},
+                                    ]
+                                });
+                        
+                                pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,autoCropUrl], (err2, result2, fields2) => {
+                                    if(err2){   
+                                        console.log(err2);
+                                        return res.status(500).json({ success: false, message: "Error uploading image" });
+                                    }
+                                })
+                            }
+                        );
+                        
+                        streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
+                    })
+                    */
+        
+                    /************** Uploading an image to cloudinary along with customizable watermark ****************************/
+        
+        
+        
+                    /************** Uploading an image to cloudinary using that image for watermark using picnie ****************************/
+        
+                    images.map(async (file) => {
+                        let cld_upload_stream = await cloudinary.uploader.upload_stream(
+                            {
+                              folder: "test"
+                            },
+                            async(err1,result1)=>{
+                                if(err1){
+                                    console.log(err1);
+                                }
+                
+                                // Transform the image: auto-crop to square aspect_ratio
+                                const autoCropUrl = await cloudinary.url(result1.public_id, {
+                                    // background:"gen_fill"
+                                    crop: 'auto_pad',
+                                    gravity: 'auto',
+                                    width: 1200,
+                                    height: 800,
+                                    
+                                });
+                        
+                                console.log(autoCropUrl);
+                                const data ={
+                                    "project_id": 1630,
+                                    "background_image_url":`${autoCropUrl}`,
+                                    "front_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724254464/test/kjizq7xvdpustn9zyrpa.png",
+                                    "position":"bc",
+                                    "image_max_width":"1200",
+                                    "image_max_height":"800"
+                                }
+                            
+                                await axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
+                                    pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,response.data.url], (err3, result3, fields3) => {
+                                        if(err3){   
+                                            console.log(err3);
+                                            return res.status(500).json({ success: false, message: "Error uploading image" });
+                                            return true;
+                                        }
+                                    })
+                                })
+                            }
+                        );
+                        
+                        streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
+                    });
+        
+                    return res.status(200).json({ success: true, message: "Property added successfully" });
                 });
-            });
+            }else{
+                return res.status(400).json({ success: true, message:"You are not authorized to perform this action" });
+            }
+        })
 
-            return res.status(200).json({ success: true, message: "Property added successfully" });
-        });
+        
     }catch(error){
         return res.status(500).json({ success: false, message: "Server error" });
     }
+})
+
+app.get("/deleteProperty", verifyToken, (req, res) => {
+    let {pid} = req.query;
+    
+    try{
+        pool.query(`DELETE FROM properties WHERE pid = ?`, [pid], (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Mysql property search error" });
+            }
+            return res.status(200).json({ success: true, message: "Property deleted successfully" });
+        })
+    }
+    catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
+app.post("/nearby", (req, res) => {
+    let {latitude, longitude} = req.body;
+    // console.log(latitude, longitude);
+    axios.get(`https://api.geoapify.com/v2/places?categories=commercial.supermarket,leisure.park,catering.restaurant,public_transport.bus,service.vehicle.fuel,education.school&filter=circle:${longitude},${latitude},1700&bias=proximity:${longitude},${latitude}&apiKey=${process.env.GEOAPIFY_API_KEY}`)
+    .then((response) => {
+        // console.log(response.data);
+        let bus = response.data.features.filter((data)=>data.properties.categories.includes("public_transport.bus")).length;
+        let school = response.data.features.filter((data)=>data.properties.categories.includes("education.school")).length;
+        let fuel = response.data.features.filter((data)=>data.properties.categories.includes("service.vehicle.fuel")).length;
+        let supermarket = response.data.features.filter((data)=>data.properties.categories.includes("commercial.supermarket")).length;
+        let restaurant = response.data.features.filter((data)=>data.properties.categories.includes("catering.restaurant")).length;
+
+        axios.get(`https://api.geoapify.com/v2/places?categories=public_transport.train&filter=circle:${longitude},${latitude},1700&bias=proximity:${longitude},${latitude}&apiKey=${process.env.GEOAPIFY_API_KEY}`)
+        .then((response) => {
+            let train = response.data.features.filter((data)=>data.properties.categories.includes("public_transport.train")).length;
+            let temp = {
+                "bus": bus,
+                "school": school,
+                "fuel": fuel,
+                "supermarket": supermarket,
+                "restaurant": restaurant,
+                "train": train
+            }
+            return res.status(200).json({ success: true, message: temp });
+        })
+        .catch((error) => {
+            return res.status(500).json({ success: false, message: error });
+        })
+    })
+    .catch((error) => {
+        return res.status(500).json({ success: false, message: error });
+    })
 })
 
 app.get("/properties", (req, res) =>  {
@@ -533,6 +632,40 @@ app.post("/booking", verifyToken,async (req, res) => {
     }
 });
 
+app.get("/userDashboard", verifyToken, (req, res) => {
+    
+    try{
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.pid IN(SELECT pid FROM user_saved_properties WHERE uid = (SELECT uid FROM user WHERE email = "${G_EMAIL}"))`, (err1, result1, fields1) => {
+            if (err1) {
+                console.log(err1);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            // console.log(result1);
+            return res.status(200).json({ success: true, properties: result1 });
+        })
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
+app.get("/adminDashboard", verifyToken, (req, res) => {
+
+    try{
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.email = "${G_EMAIL}"`, (err1, result1, fields1) => {
+            if (err1) {
+                console.log(err1);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            // console.log(result1);
+            return res.status(200).json({ success: true, properties: result1 });
+        })
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
 app.post("/chat", verifyToken, (req, res) => {
     const {postcode,comments} = req.body;
     
@@ -671,6 +804,8 @@ app.use((error, req, res, next) => {
 
 app.post("/postcode", async (req, res) => {
     let {postcode} = req.body;
+
+    console.log(postcode);
 
     if(postcode){
         await axios.request({

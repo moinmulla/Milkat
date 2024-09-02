@@ -52,6 +52,13 @@ const LoginProvider = ({ children }) => {
         localStorage.setItem('token', value);
     };
 
+    const clearData = () => {
+        localStorage.clear();
+        setLogin('Login');
+        setRole('');
+        setToken('');
+    };
+
     useEffect(() => {
         const storedLogin = localStorage.getItem('login');
         if (storedLogin) setLogin(storedLogin);
@@ -68,7 +75,7 @@ const LoginProvider = ({ children }) => {
     }, []);
 
     return (
-        <LoginContext.Provider value={{ login, changeLogin, role, changeRole, token, changeToken }}>
+        <LoginContext.Provider value={{ login, changeLogin, role, changeRole, token, changeToken, clearData }}>
             {children}
         </LoginContext.Provider>
     );

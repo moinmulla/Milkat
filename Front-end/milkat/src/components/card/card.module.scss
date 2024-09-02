@@ -13,6 +13,15 @@
         display: flex;
         justify-content: space-between;
 
+        .link{
+            cursor: pointer;
+        }
+            
+        .delink{
+            margin-top: 0.4rem;
+            color: red;
+            cursor: pointer;
+        }
     }
 
     .carousel{

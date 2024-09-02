@@ -14,7 +14,7 @@
         padding-top: 2rem;
 
         .title{
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
@@ -98,7 +98,7 @@
             .time_slots{
                 .time_slots_list{
                     display: grid;
-                    grid-template-columns: auto auto auto auto;
+                    grid-template-columns: repeat(3, 1fr);
                 }
 
                 .time_slot{
@@ -124,6 +124,23 @@
 }
 
 /*CSS Breakpoints*/
+
+@media(max-width: 1024px){
+    .container{
+        .content{
+            .schedule{
+                .time_slots{
+                    .time_slots_list{
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
 
 @media(max-width: 768px){
 
@@ -188,7 +205,7 @@
                 .time_slots{
                     .time_slots_list{
                         display: grid;
-                        grid-template-columns: auto auto auto auto;
+                        grid-template-columns: repeat(2, 1fr);
                     }
     
     
@@ -274,7 +291,7 @@
                 .time_slots{
                     .time_slots_list{
                         display: grid;
-                        grid-template-columns: auto ;
+                        grid-template-columns: repeat(1, 1fr);
                     }
     
                     .time_slot{
