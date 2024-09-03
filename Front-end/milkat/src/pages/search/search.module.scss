@@ -78,6 +78,16 @@
 
 /*CSS breakpoints*/
 
+@media(max-width: 1024px){
+    .content{
+        .filterSort{
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            justify-items: center;
+        }
+    }
+}
+
 @media(max-width: 768px){
     .heading{
         font-size: 2.3rem;
@@ -86,6 +96,12 @@
     .content{
         .noResults{
             font-size: 1.5rem;
+        }
+
+        .filterSort{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            justify-items: center;
         }
     }
 }
@@ -108,14 +124,25 @@
     }
 
     .content{
+        .filterProperty{
+            padding: 0 1rem;
+        }
         .noResults{
             font-size: 1.1rem;
+        }
+        .filterSort{
+            .select{
+                width: 8rem;
+            }
         }
     }
 }
 
 @media(max-width: 370px){
     .content{
+        .filterProperty{
+            padding: 0 0.5rem;
+        }
         .filterSort{
             .select{
                 width: 8rem;

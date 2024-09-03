@@ -1,21 +1,34 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Select from "react-select";
 import SearchBar from "../../components/searchbar/SearchBar";
-// import Select from "../../components/select/Select";
 import { BsSortDown, BsSortDownAlt } from "react-icons/bs";
 import Card from "../../components/card/Card";
 import axios from "../../utils/axios";
 import styles from "./search.module.scss";
 
 function Search() {
-  const searchParams = useSearchParams();
-  const postcode_temp = searchParams[0].get("q").toUpperCase();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const postcode_temp = searchParams.get("q")?.toUpperCase() || ""; // Ensure safe access using optional chaining (?.)
+  const navigate = useNavigate();
+
   const [data, setData] = useState([]);
   const [newData, setNewData] = useState([]);
-  const [newData2, setNewData2] = useState([]);
-  const [sale, setSale] = useState(-1);
-  const [propertyType, setPropertyType] = useState("all");
+
+  const [sale, setSale] = useState(searchParams.get("sale") || "all");
+  const [propertyType, setPropertyType] = useState(
+    searchParams.get("propertyType") || "all"
+  );
+
+  const [bedrooms, setBedrooms] = useState(
+    searchParams.get("bedrooms") || "None"
+  );
+  const [bathrooms, setBathrooms] = useState(
+    searchParams.get("bathrooms") || "None"
+  );
+  const [receptions, setReceptions] = useState(
+    searchParams.get("receptions") || "None"
+  );
 
   const options_sort = [
     {
@@ -41,49 +54,33 @@ function Search() {
   ];
 
   const options_filter = [
-    {
-      value: "all",
-      label: <div>All</div>,
-    },
-    {
-      value: "Bungalow",
-      label: <div>Bungalow</div>,
-    },
-    {
-      value: "Detached",
-      label: <div>Detached</div>,
-    },
-    {
-      value: "Semi-detached",
-      label: <div>Semi-detached</div>,
-    },
-    {
-      value: "Terraced",
-      label: <div>Terraced</div>,
-    },
-    {
-      value: "Flats",
-      label: <div>Flats</div>,
-    },
-    {
-      value: "Farms/land",
-      label: <div>Farms/land</div>,
-    },
+    { value: "all", label: <div>All</div> },
+    { value: "Bungalow", label: <div>Bungalow</div> },
+    { value: "Detached", label: <div>Detached</div> },
+    { value: "Semi-detached", label: <div>Semi-detached</div> },
+    { value: "Terraced", label: <div>Terraced</div> },
+    { value: "Flats", label: <div>Flats</div> },
+    { value: "Farms/land", label: <div>Farms/land</div> },
   ];
 
   const options_sale = [
-    {
-      value: "all",
-      label: <div>All</div>,
-    },
-    {
-      value: "sale",
-      label: <div>Sale</div>,
-    },
-    {
-      value: "rent",
-      label: <div>Rent</div>,
-    },
+    { value: "all", label: <div>All</div> },
+    { value: "sale", label: <div>Sale</div> },
+    { value: "rent", label: <div>Rent</div> },
+  ];
+
+  const options_number = [
+    { value: "None", label: <div>None</div> },
+    { value: "1", label: <div>{"<"}1</div> },
+    { value: "2", label: <div>{"<"}2</div> },
+    { value: "3", label: <div>{"<"}3</div> },
+    { value: "4", label: <div>{"<"}4</div> },
+    { value: "5", label: <div>{"<"}5</div> },
+    { value: "6", label: <div>{"<"}6</div> },
+    { value: "7", label: <div>{"<"}7</div> },
+    { value: "8", label: <div>{"<"}8</div> },
+    { value: "9", label: <div>{"<"}9</div> },
+    { value: "10", label: <div>{"<"}10</div> },
   ];
 
   const handleSort = (value) => {
@@ -92,97 +89,116 @@ function Search() {
     } else if (value === "descending") {
       setNewData([...newData].sort((a, b) => b.price - a.price));
     } else {
-      setNewData(newData2);
-      // console.log(newData2);
+      setNewData(newData);
     }
   };
 
   const handleFilter = (value) => {
-    let filteredData;
     setPropertyType(value);
-    if (
-      (value === "Bungalow" ||
-        value === "Detached" ||
-        value === "Semi-detached" ||
-        value === "Terraced" ||
-        value === "Flats" ||
-        value === "Farms/land") &&
-      sale !== -1
-    ) {
-      filteredData = [...data].filter(
-        (d) => d.property_type === value && d.sale === sale
-      );
-    } else if (
-      (value === "Bungalow" ||
-        value === "Detached" ||
-        value === "Semi-detached" ||
-        value === "Terraced" ||
-        value === "Flats" ||
-        value === "Farms/land") &&
-      sale == -1
-    ) {
-      filteredData = [...data].filter((d) => d.property_type === value);
-    } else if (value === "all" && sale !== -1) {
-      filteredData = [...data].filter((d) => d.sale === sale);
-    } else {
-      setNewData(data);
-    }
-
-    setNewData(filteredData);
-    setNewData2(filteredData);
+    searchParams.set("propertyType", value);
+    updateSearchParams({ propertyType: value });
   };
 
   const handleSale = (value) => {
-    let filteredData;
+    setSale(value);
+    updateSearchParams({ sale: value });
+  };
 
-    if (value === "sale" && propertyType !== "all") {
-      setSale(1);
-      filteredData = [...data].filter(
-        (d) => d.sale === 1 && d.property_type === propertyType
+  const handleBedrooms = (value) => {
+    setBedrooms(value);
+    updateSearchParams({ bedrooms: value });
+  };
+
+  const handleBathrooms = (value) => {
+    setBathrooms(value);
+    updateSearchParams({ bathrooms: value });
+  };
+
+  const handleReceptions = (value) => {
+    setReceptions(value);
+    updateSearchParams({ receptions: value });
+  };
+
+  const applyFilters = (dataToFilter) => {
+    let filteredData = dataToFilter;
+
+    if (propertyType !== "all") {
+      filteredData = filteredData.filter(
+        (d) => d.property_type === propertyType
       );
-    } else if (value === "rent" && propertyType !== "all") {
-      setSale(0);
-      filteredData = [...data].filter(
-        (d) => d.sale === 0 && d.property_type === propertyType
-      );
-    } else if (value === "sale" && propertyType == "all") {
-      setSale(1);
-      filteredData = [...data].filter((d) => d.sale === 1);
-    } else if (value === "rent" && propertyType == "all") {
-      setSale(0);
-      filteredData = [...data].filter((d) => d.sale === 0);
-    } else if (value === "all" && propertyType !== "all") {
-      filteredData = [...data].filter((d) => d.property_type === propertyType);
-    } else {
-      setSale(-1);
-      filteredData = [...data];
     }
 
+    if (sale !== "all") {
+      if (sale == "sale") {
+        filteredData = filteredData.filter((d) => d.sale === 1);
+      } else if (sale == "rent") {
+        filteredData = filteredData.filter((d) => d.sale === 0);
+      }
+    }
+
+    if (bedrooms !== "None") {
+      filteredData = filteredData.filter(
+        (d) => d.bedroom <= parseInt(bedrooms)
+      );
+    }
+
+    if (bathrooms !== "None") {
+      filteredData = filteredData.filter(
+        (d) => d.bathroom <= parseInt(bathrooms)
+      );
+    }
+
+    if (receptions !== "None") {
+      filteredData = filteredData.filter(
+        (d) => d.reception <= parseInt(receptions)
+      );
+    }
+
+    console.log(filteredData);
     setNewData(filteredData);
-    setNewData2(filteredData);
+  };
+
+  const updateSearchParams = (newParams) => {
+    const updatedParams = new URLSearchParams(searchParams);
+
+    for (const key in newParams) {
+      if (newParams[key] !== undefined) {
+        updatedParams.set(key, newParams[key]);
+      }
+    }
+
+    navigate({ search: updatedParams.toString() }, { replace: true }); // Use replace to avoid history entry
   };
 
   useEffect(() => {
     const fetch_data = async () => {
       await axios
-        .get("/properties", { params: { postcode: postcode_temp } })
+        .get("/properties", {
+          params: { postcode: postcode_temp },
+        })
         .then((res) => {
-          // console.log(res.data.properties);
           const fetchedData = res.data.properties;
+
           if (JSON.stringify(fetchedData) !== JSON.stringify(data)) {
             setData(fetchedData);
             setNewData(fetchedData);
-            setNewData2(fetchedData);
+            applyFilters(fetchedData);
           }
         })
         .catch((error) => {
-          // console.log(error);
           setData([]);
           setNewData([]);
         });
     };
-    fetch_data();
+
+    if (postcode_temp) {
+      fetch_data();
+    }
   }, [postcode_temp]);
+
+  useEffect(() => {
+    applyFilters(data);
+  }, [postcode_temp, propertyType, sale, bedrooms, bathrooms, receptions]);
 
   return (
     <div className={styles.container}>
@@ -206,12 +222,14 @@ function Search() {
           )
         ) : (
           <>
-            <div>
+            <div className={styles.filterProperty}>
               <Select
-                // isMulti
                 placeholder="Select property type"
                 options={options_filter}
                 className={styles.select}
+                value={options_filter.find(
+                  (option) => option.value === propertyType
+                )}
                 onChange={(value) => {
                   handleFilter(value.value);
                 }}
@@ -223,8 +241,43 @@ function Search() {
                   placeholder="Filter"
                   options={options_sale}
                   className={styles.select}
+                  value={options_sale.find(
+                    (option) =>
+                      option.value ===
+                      (sale === 1 ? "sale" : sale === 0 ? "rent" : "all")
+                  )}
                   onChange={(value) => {
                     handleSale(value.value);
+                  }}
+                />
+              </div>
+              <div className={styles.sort}>
+                <Select
+                  placeholder="Bedrooms"
+                  options={options_number}
+                  className={styles.select}
+                  onChange={(value) => {
+                    handleBedrooms(value.value);
+                  }}
+                />
+              </div>
+              <div className={styles.sort}>
+                <Select
+                  placeholder="Bathrooms"
+                  options={options_number}
+                  className={styles.select}
+                  onChange={(value) => {
+                    handleBathrooms(value.value);
+                  }}
+                />
+              </div>
+              <div className={styles.sort}>
+                <Select
+                  placeholder="Receptions"
+                  options={options_number}
+                  className={styles.select}
+                  onChange={(value) => {
+                    handleReceptions(value.value);
                   }}
                 />
               </div>

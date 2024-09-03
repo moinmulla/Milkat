@@ -16,7 +16,7 @@
         .link{
             cursor: pointer;
         }
-            
+
         .delink{
             margin-top: 0.4rem;
             color: red;
@@ -58,6 +58,10 @@
         .ind_details{
             display: flex;
             gap: 0.1rem;
+
+            .star{
+                color:goldenrod
+            }
         }
         
     }

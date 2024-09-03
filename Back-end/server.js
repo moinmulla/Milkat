@@ -421,6 +421,97 @@ app.get("/deleteProperty", verifyToken, (req, res) => {
     }
 })
 
+app.post("/timeslot",verifyToken, (req, res) => {
+    const {timeslots,pid}=req.body;
+    console.log(timeslots);
+
+    // const timeslots_temp = JSON.parse(timeslots);
+    let timeslots1 = timeslots.map(obj=>[pid,new Date(obj.start),new Date(obj.end),0]);
+
+    try{
+        pool.query("SELECT anytime FROM time_slots WHERE property_id = ? ",[pid],(err,result,fields)=>{
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+            }
+            if(result.length==0){
+                res.status(400).json({ success: true, message: "No such property exists" });
+            }
+            if(result[0].anytime){
+                pool.query("DELETE FROM time_slots WHERE property_id = ? AND anytime = 1",[pid],(err1,result1,fields1)=>{
+                    if(err1){
+                        console.log(err1);
+                        return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+                    }
+                    pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [timeslots1], (err2, result2, fields2) => {
+                        if(err2){   
+                            console.log(err2);
+                            return res.status(500).json({ success: false, message: "Error inserting time slots" });
+                        }
+                        res.status(200).json({ success: true, message: "Time slots added successfully" });
+                    })
+                })
+            }else{
+                pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [timeslots1], (err2, result2, fields2) => {
+                    if(err2){   
+                        console.log(err2);
+                        return res.status(500).json({ success: false, message: "Error inserting time slots" });
+                    }
+                    res.status(200).json({ success: true, message: "Time slots added successfully" });
+                })
+            }
+        })
+    }
+    catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+})
+
+app.get("/rating",verifyToken, (req, res) => {
+    let {pid,rating} = req.query;
+    
+    pool.query("SELECT rating FROM user WHERE email = ? ",[G_EMAIL],(err,result,fields)=>{
+        if(err){
+            console.log(err);
+            return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+        }
+        if(result.length==0){
+            res.status(400).json({ success: true, message: "No user exists" });
+        }
+        if(result[0].rating){
+            res.status(400).json({ success: true, message: "Already rated" });
+        }else{
+            pool.query("SELECT rating,rating_count FROM properties WHERE pid = ? ",[pid],(err1,result1,fields1)=>{
+                if(err1){
+                    console.log(err1);
+                    return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+                }
+                if(result1.length==0){
+                    res.status(400).json({ success: true, message: "No such property exists" });
+                }
+                const old_rating = result1[0].rating;
+                const old_rating_count = result1[0].rating_count;
+                const new_rating_count = old_rating_count+1;
+                const new_rating = ((old_rating*old_rating_count)+rating)/new_rating_count;
+                
+                pool.query("UPDATE properties SET rating = ?, rating_count = ? WHERE pid = ? ",[new_rating,new_rating_count,pid],(err2,result2,fields2)=>{
+                    if(err2){
+                        console.log(err2);
+                        return res.status(500).json({ success: false, message: "Mysql search error" });
+                    }
+                    pool.query("UPDATE user SET rating = 1 WHERE email = ? ",[G_EMAIL],(err3,result3,fields3)=>{
+                        if(err3){
+                            console.log(err3);
+                            return res.status(500).json({ success: false, message: "Mysql search error" });
+                        }
+                    })
+                    res.status(200).json({ success: true, message: "Rating added successfully" });
+                })
+            })
+        }
+    })
+})
+
 app.post("/nearby", (req, res) => {
     let {latitude, longitude} = req.body;
     // console.log(latitude, longitude);
@@ -466,7 +557,7 @@ app.get("/properties", (req, res) =>  {
 
     try{
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where postcode like "${postcode1}%"`, (err1, result1, fields1) => {
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths,rating FROM properties p where postcode like "${postcode1}%"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });
@@ -512,7 +603,7 @@ app.get("/property/:id", (req, res) => {
             // console.log(result);
         })
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("tid",t.time_slot_id,"start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid AND t.used=0) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, rating, (SELECT JSON_ARRAYAGG(JSON_OBJECT("tid",t.time_slot_id,"start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid AND t.used=0) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Mysql property search error" });
@@ -668,6 +759,7 @@ app.get("/adminDashboard", verifyToken, (req, res) => {
 
 app.post("/chat", verifyToken, (req, res) => {
     const {postcode,comments} = req.body;
+    const postcode1= postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();;
     
     pool.query(`SELECT uid FROM user WHERE email = ?`, [G_EMAIL], (err1, result1) => {
         if (err1) {
@@ -684,7 +776,7 @@ app.post("/chat", verifyToken, (req, res) => {
         // Then, insert the chat message
         pool.query(
             `INSERT INTO chats (postcode, comment, uid) VALUES (?, ?, ?)`,
-            [postcode, comments, uid],
+            [postcode1, comments, uid],
             (err2, result2) => {
                 if (err2) {
                     console.log(err2);

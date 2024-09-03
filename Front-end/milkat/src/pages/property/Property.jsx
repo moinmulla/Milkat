@@ -1,16 +1,19 @@
-import React, { useEffect, useState, useReducer } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Carousel } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import axios from "../../utils/axios";
 import Googlemaps from "../../components/googlemaps/Googlemaps";
 import Nearby from "../../components/nearby/Nearby";
-import { FaBath } from "react-icons/fa";
+import { FaBath, FaRegStar } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
 import { CiCircleInfo } from "react-icons/ci";
 import { FaBookmark, FaRegBookmark } from "react-icons/fa6";
 import { toast } from "react-toastify";
+import CryptoJS from "crypto-js";
+import Timeslot from "../../components/timeslot/Timeslot";
+import { LoginContext } from "../../hooks/LoginContext";
 import styles from "./property.module.scss";
 
 const Property = () => {
@@ -21,6 +24,9 @@ const Property = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [saved, setSaved] = useState(false);
   const [value, setValue] = useState(0);
+  const { role } = useContext(LoginContext);
+  const [admin, setAdmin] = useState(false);
+  const [timeSlots, setTimeSlots] = useState([]);
   let maps_props;
 
   const formatter = new Intl.NumberFormat("en-GB", {
@@ -207,17 +213,107 @@ const Property = () => {
     }
   };
 
+  const handleTimeSlots = () => {
+    if (timeSlots.length === 0) {
+      toast.error("Please select atleast one time slot", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    } else {
+      if (
+        window.confirm(
+          "Are you sure you want to add time slots to this property?"
+        ) === true
+      ) {
+        axios
+          .post("/timeslot", { timeslots: timeSlots, pid: pid })
+          .then((res) => {
+            toast.success(res.data.message, {
+              position: "top-right",
+              autoClose: 2000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: false,
+              draggable: true,
+              progress: undefined,
+              theme: "colored",
+            });
+            setTimeSlots([]);
+          })
+          .catch((err) => {
+            toast.error(err.response.data.message, {
+              position: "top-right",
+              autoClose: 2000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: false,
+              draggable: true,
+              progress: undefined,
+              theme: "colored",
+            });
+          });
+      }
+    }
+  };
+
+  const handleReview = (num) => {
+    if (document.cookie) {
+      axios
+        .get("/rating", { params: { pid: pid, rating: num } })
+        .then((res) => {
+          toast.success(res.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          toast.error(err.response.data.message, {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "colored",
+          });
+        });
+    } else {
+      toast.error("Please login first", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
+    }
+  };
+
   useEffect(() => {
     const fetch_data = async () => {
       await axios
         .get(`/property/${pid}`)
         .then((res) => {
-          console.log(res.data.property);
           maps_props = {
             location: res.data.property[0].location,
             address: res.data.property[0].address_line1,
           };
-          console.log(maps_props);
           setData(res.data.property[0]);
           setLoading(false);
         })
@@ -235,7 +331,6 @@ const Property = () => {
         })
         .catch((err) => {
           setSaved(false);
-          console.log(err);
         });
     };
 
@@ -245,6 +340,36 @@ const Property = () => {
       fetch_saved_properties();
     }
   }, []);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (role === "admin") {
+        const secret_key = process.env.REACT_APP_SECRET_KEY || "secret_key";
+        const cookie_value = decodeURIComponent(document.cookie);
+
+        const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
+
+        if (temp_token) {
+          const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
+          const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
+
+          const role1 = decrypted_token.match(new RegExp("role=([^;]+)"));
+          const email1 = decrypted_token.match(new RegExp("email=([^;]+)"));
+
+          if (role1 && email1) {
+            const role2 = role1[1];
+            const email = email1[1];
+
+            if (role2 === "admin" && email === data.email) {
+              setAdmin(true);
+            }
+          }
+        }
+      }
+    };
+
+    checkAdmin();
+  }, [role, data.email]);
 
   return (
     <>
@@ -413,6 +538,20 @@ const Property = () => {
                   </div>
                 </div>
               )}
+              <div>
+                {admin ? (
+                  <div className={styles.admin_time_slots}>
+                    <Timeslot
+                      timeSlots={timeSlots}
+                      setTimeSlots={setTimeSlots}
+                      className={styles.admin_timeslot}
+                    />
+                    <Button onClick={handleTimeSlots} className={styles.button}>
+                      Confirm Selection
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <hr />
@@ -421,8 +560,51 @@ const Property = () => {
                 <span className={styles.title}>
                   Nearby places within 1 mile of area
                 </span>
+                <div className={styles.sub_title}>
+                  <CiCircleInfo className={styles.info_icon} />
+                  This information might not be up-to-date
+                </div>
               </div>
               <Nearby location={data.location} />
+            </div>
+
+            <hr />
+            <div className={styles.reviews}>
+              <div>
+                <span className={styles.title}>Ratings</span>
+              </div>
+              <div className={styles.rating_details}>
+                <span className={styles.rating}>
+                  Current ratings: {data.rating}
+                </span>
+              </div>
+              <div className={styles.stars}>
+                <FaRegStar
+                  size={30}
+                  className={styles.star}
+                  onClick={() => handleReview(5)}
+                />
+                <FaRegStar
+                  size={30}
+                  className={styles.star}
+                  onClick={() => handleReview(4)}
+                />
+                <FaRegStar
+                  size={30}
+                  className={styles.star}
+                  onClick={() => handleReview(3)}
+                />
+                <FaRegStar
+                  size={30}
+                  className={styles.star}
+                  onClick={() => handleReview(2)}
+                />
+                <FaRegStar
+                  size={30}
+                  className={styles.star}
+                  onClick={() => handleReview(1)}
+                />
+              </div>
             </div>
 
             <hr />

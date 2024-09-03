@@ -4,7 +4,7 @@ import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Carousel from "react-bootstrap/Carousel";
 import axios from "../../utils/axios";
-import { FaBath, FaTrashAlt } from "react-icons/fa";
+import { FaBath, FaTrashAlt, FaRegStar } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
 import { FaLink } from "react-icons/fa6";
@@ -15,7 +15,7 @@ const Cards = ({ data, setCount }) => {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
 
-  console.log(data);
+  //   console.log(data);
 
   const formatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -122,10 +122,6 @@ const Cards = ({ data, setCount }) => {
                 {item.sale ? "Sale" : "Rent"}
               </div>
             </div>
-            {/* <Card.Title>
-              {formatter.format(item.price)}
-              {!item.sale && " pcm"}
-            </Card.Title> */}
             <Card.Subtitle className="mb-2 text-muted">
               {!item.sale && formatter.format(item.price / 4) + " pcw"}
             </Card.Subtitle>
@@ -158,18 +154,26 @@ const Cards = ({ data, setCount }) => {
                     {item.property_type}
                   </div>
                 )}
-                <div className={styles.details}>
-                  <div className={styles.ind_details} title="Reception">
-                    <GiSofa size={20} />
-                    {item.reception}
+                <div className={styles.divider}>
+                  <div className={styles.details}>
+                    <div className={styles.ind_details} title="Reception">
+                      <GiSofa size={20} />
+                      {item.reception}
+                    </div>
+                    <div className={styles.ind_details} title="Bedroom">
+                      <IoBed size={20} />
+                      {item.bedroom}
+                    </div>
+                    <div className={styles.ind_details} title="Bathroom">
+                      <FaBath size={20} />
+                      {item.bathroom}
+                    </div>
                   </div>
-                  <div className={styles.ind_details} title="Bedroom">
-                    <IoBed size={20} />
-                    {item.bedroom}
-                  </div>
-                  <div className={styles.ind_details} title="Bathroom">
-                    <FaBath size={20} />
-                    {item.bathroom}
+                  <div className={styles.details}>
+                    <div className={styles.ind_details}>
+                      <FaRegStar size={20} className={styles.star} />
+                      {item.rating}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -177,7 +181,6 @@ const Cards = ({ data, setCount }) => {
             <Card.Text className={styles.address}>
               {item.address_line1}, {item.town} {item.postcode.split(" ")[0]}
             </Card.Text>
-            {/* <Card.Text>{item.address_line1}</Card.Text> */}
             <Card.Text className={styles.decription}>
               {item.description && item.description.length < 200
                 ? item.description
@@ -185,7 +188,6 @@ const Cards = ({ data, setCount }) => {
                 ? item.description.substring(0, 200) + "..."
                 : "No description available."}
             </Card.Text>
-            {/* <Card.Link variant="primary">Go somewhere</Card.Link> */}
           </Card.Body>
         </Card>
       ))}

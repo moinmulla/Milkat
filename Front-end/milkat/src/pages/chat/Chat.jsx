@@ -8,6 +8,9 @@ import styles from "./chat.module.scss";
 function Chat() {
   const formikRef = useRef();
   const [data, setData] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [filterPostcode, setFilterPostcode] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
 
   const initialValues = {
     postcode: "",
@@ -29,29 +32,57 @@ function Chat() {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     console.log("Form data:", values);
-
-    axios.post("/chat", values).then((res) => {
-      console.log(res);
-      setSubmitting(false);
-      toast.success(res.data.message, {
-        position: "top-right",
-        autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        progress: undefined,
-        theme: "colored",
+    setOpen(true);
+    axios
+      .post("/chat", values)
+      .then((res) => {
+        setOpen(false);
+        console.log(res);
+        setSubmitting(false);
+        toast.success(res.data.message, {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error(err.response.data.message, {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
       });
-    });
   };
 
   useEffect(() => {
     axios.get("/chat_lookup").then((res) => {
       console.log(res.data.message);
       setData(res.data.message);
+      setFilteredData(res.data.message);
     });
-  }, [initialValues]);
+  }, [open]);
+
+  const handleFilterChange = (e) => {
+    const value = e.target.value;
+    setFilterPostcode(value);
+
+    const filtered = data.filter((item) =>
+      item.postcode.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setFilteredData(filtered);
+  };
 
   return (
     <div className={styles.container}>
@@ -113,9 +144,21 @@ function Chat() {
           )}
         </Formik>
       </div>
+      <div className={styles.filter}>
+        <label htmlfor="postcode" className={styles.label}>
+          Filter by postcode:
+        </label>
+        <input
+          type="text"
+          placeholder="Filter by postcode"
+          value={filterPostcode}
+          onChange={handleFilterChange}
+          className={styles.filterInput}
+        />
+      </div>
       <div className={styles.data}>
-        {data
-          ? data.map((item) => (
+        {filteredData
+          ? filteredData.map((item) => (
               <div key={item.id}>
                 <div className={styles.chat}>
                   <p>Name: {item.name}</p>

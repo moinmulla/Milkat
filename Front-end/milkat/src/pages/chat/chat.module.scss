@@ -90,5 +90,25 @@
         padding: 1rem;
         margin-bottom: 1rem;
     }
+
+    .filter{
+        margin-bottom: 1rem;
+        .label{
+            color: var(--lighttext);
+            font-size: 1.2rem;
+            padding-bottom: 0.3rem;
+            align-content: center;
+            margin-right: 0.2rem;
+        }
+
+        .filterInput{
+            background: white;
+            border: 1px solid var(--border);
+            font-size: 1.25rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            padding-left: 0.5rem;
+        }
+    }
     
 }
