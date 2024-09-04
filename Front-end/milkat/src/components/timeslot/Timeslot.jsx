@@ -9,9 +9,11 @@ import styles from "./timeslot.module.scss";
 
 const TimeSlotPicker = ({ timeSlots, setTimeSlots }) => {
   const addTimeSlot = () => {
+    // Add a new time slot which will reflect in the list of time slots in parent component
     setTimeSlots([...timeSlots, { start: new Date(), end: new Date() }]);
   };
 
+  // Update the time slot in the list of time slots in parent component
   const handleTimeChange = (index, type, newValue) => {
     const updatedTimeSlots = timeSlots.map((slot, i) =>
       i === index ? { ...slot, [type]: newValue } : slot

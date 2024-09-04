@@ -1,31 +1,32 @@
 import { useContext } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import "./App.scss";
+import CryptoJS from "crypto-js";
+import Cookies from "js-cookie";
 import Navbar from "./components/navbar/Navbar";
 import Footer from "./components/footer/Footer";
+import Modal from "./components/modal/Modal";
 import Home from "./pages/home/Home";
 import Search from "./pages/search/Search";
 import Listup from "./pages/listup/Listup";
 import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
-import Prediction from "./pages/prediction/Prediction";
 import Property from "./pages/property/Property";
 import Chat from "./pages/chat/Chat";
 import Dashboard from "./pages/dashboard/Dashboard";
 import AdminDashboard from "./pages/adminDashboard/AdminDashboard";
 import UserDashboard from "./pages/userDashboard/UserDashboard";
-import Modal from "./components/modal/Modal";
 import { toast, ToastContainer } from "react-toastify";
-import CryptoJS from "crypto-js";
 import { LoginProvider, LoginContext } from "./hooks/LoginContext";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.scss";
 
-const Protected_Route = ({ children, requiredRole }) => {
-  const { login, role, token } = useContext(LoginContext);
-  // const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { clearData, changeLogin, changeRole, changeToken } =
+    useContext(LoginContext);
+  const secretKey = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
 
-  // console.log(role, token, role);
-  if (!document.cookie) {
+  if (Cookies.get("token") == undefined) {
+    clearData();
     setTimeout(() => {
       toast.error("Please login first", {
         position: "top-right",
@@ -42,27 +43,24 @@ const Protected_Route = ({ children, requiredRole }) => {
     return <Home />;
   }
 
-  // const cookie_value = decodeURIComponent(document.cookie);
+  //fetch data from cookie
+  const cookieValue = decodeURIComponent(document.cookie);
+  const tempToken = cookieValue.match(new RegExp("token=([^;]+)"));
+  const bytes = CryptoJS.AES.decrypt(tempToken[1], secretKey);
+  const decryptedToken = bytes.toString(CryptoJS.enc.Utf8);
+  const role = decryptedToken.match(new RegExp("role=([^;]+)"));
+  const token = decryptedToken.match(new RegExp("token=([^;]+)"));
+  const name = decryptedToken.match(new RegExp("name=([^;]+)"));
 
-  // const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
+  const role1 = role[1];
+  const name1 = name[1];
+  const token1 = token[1];
 
-  // const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
+  changeLogin(name[1]);
+  changeRole(role[1]);
+  changeToken(token[1]);
 
-  // const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
-
-  // const role = decrypted_token.match(new RegExp("role=([^;]+)"));
-  // const token = decrypted_token.match(new RegExp("token=([^;]+)"));
-  // const name = decrypted_token.match(new RegExp("name=([^;]+)"));
-
-  const role1 = role;
-  const name1 = login;
-  const token1 = token;
-
-  console.log(role1, token1, name1);
-  console.log(requiredRole);
-  // changeLogin(name[1]);
-
-  // console.log("children: " + JSON.stringify(children));
+  //requiredRole is used to render only dashboard components
   if (role && role1 === "admin" && requiredRole === "property") {
     return <AdminDashboard />;
   }
@@ -84,42 +82,33 @@ function App({ children }) {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/search" element={<Search />} />
-              <Route path="/prediction" element={<Prediction />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/property/:pid" element={<Property />} />
               <Route
                 path="/listup"
                 element={
-                  <Protected_Route>
+                  <ProtectedRoute>
                     <Listup />
-                  </Protected_Route>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/chat"
                 element={
-                  <Protected_Route>
+                  <ProtectedRoute>
                     <Chat />
-                  </Protected_Route>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard"
                 element={
-                  <Protected_Route requiredRole="property">
+                  <ProtectedRoute requiredRole="property">
                     <Dashboard />
-                  </Protected_Route>
+                  </ProtectedRoute>
                 }
               />
-              {/* <Route
-              path="/user_dashboard"
-              element={
-                <Protected_Route>
-                  <UserDashboard />
-                </Protected_Route>
-              }
-            /> */}
               <Route path="*" element={<Home />} />
             </Routes>
             <ToastContainer

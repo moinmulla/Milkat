@@ -18,6 +18,7 @@ function Modal({ modal, setModal }) {
     setModal(!modal);
   };
 
+  // Prevent body from scrolling when modal is open
   useEffect(() => {
     if (modal) {
       document.body.style.overflowY = "hidden";
@@ -81,8 +82,10 @@ function Modal({ modal, setModal }) {
         const token = decrypted_token.match(new RegExp("token=([^;]+)"));
         const name = decrypted_token.match(new RegExp("name=([^;]+)"));
 
+        //stores the token in the cookie in encrypted form
         token[1] = CryptoJS.AES.encrypt(token[1], secret_key).toString();
 
+        //stores the name,role and token in the local storage and login context
         changeLogin(name[1]);
         changeRole(role[1]);
         changeToken(token[1]);
@@ -178,12 +181,6 @@ function Modal({ modal, setModal }) {
           ) : (
             <SignUp signIn={signIn} setSignIn={setSignIn} />
           )}
-          {/* <hr className={styles.hr} />
-          <div className={styles.google}>
-            <button type="button" className={styles.loginWithGoogleBtn}>
-              Sign in with Google
-            </button>
-          </div> */}
           <button className={styles.closeModal} onClick={toggleModal}>
             <IoCloseOutline />
           </button>

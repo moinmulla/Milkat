@@ -12,9 +12,11 @@ function Navbar() {
   const [show, handleShow] = useState(false);
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(false);
-  // const [loginText, setLogintext] = useState("Login");
+
+  //Store the name of the user in the Login context
   const { login } = useContext(LoginContext);
 
+  //Add and remove background color on scroll to the navbar
   const scrollHandler = () => {
     if (window.scrollY > 40) {
       handleShow(true);
@@ -23,6 +25,7 @@ function Navbar() {
     }
   };
 
+  //Call the function on scroll
   useEffect(() => {
     window.addEventListener("scroll", scrollHandler);
     return () => {
@@ -30,39 +33,27 @@ function Navbar() {
     };
   }, []);
 
-  // useEffect(() => {
-  //   setLogintext(login);
-  // }, [login]);
-  // console.log(login);
-
   const handleClick = () => {
     setModal(!modal);
   };
 
+  //Get to dashboard if user is logged in
   const handleUser = () => {
-    // setModal(!modal);
-    console.log("Clicked");
     navigate("/dashboard");
   };
 
   return (
-    <div className={`${styles.container} ${show && styles.navbar_scroll}`}>
+    <div className={`${styles.container} ${show && styles.navbarScroll}`}>
       <nav className={styles.navbar}>
         <span className={styles.logo}>
           <Link to="/">Milkat</Link>
         </span>
         <div className={styles.links}>
-          <a href="/prediction">Price-Prediction</a>
+          <a href="/chat">Open-Chat</a>
           <a href="/contact">Contact</a>
           <a href="/about">About</a>
 
-          {/* <button onClick={handleClick} className={styles.userBtn}>
-            <div className={styles.user}>
-              <FaUser className={styles.icon} />
-              <span className={styles.login}>{login}</span>
-            </div>
-          </button> */}
-
+          {/* Show Login button if user is not logged in and if user is logged in, show user button with name */}
           {login == "Login" ? (
             <button onClick={handleClick} className={styles.userBtn}>
               <div className={styles.user}>
@@ -80,9 +71,12 @@ function Navbar() {
               </div>
             </button>
           )}
+
+          {/* Show modal if modal is true */}
           {modal && <Modal modal={modal} setModal={setModal} />}
         </div>
 
+        {/* Mobile menu button */}
         {!open && (
           <img
             className={styles.menu_button}
@@ -106,17 +100,7 @@ function Navbar() {
 
         {open && (
           <div className={styles.mobile_links}>
-            {/* <div className={styles.user}>
-              <button onClick={handleClick}>
-                <FaUser className={styles.icon} />
-                <span className={styles.login}>Login</span>
-              </button>
-              <FaUser className={styles.icon} />
-              <a href="/login" className={styles.login}>
-                Login
-              </a>
-            </div> */}
-
+            {/* Show Login button if user is not logged in and if user is logged in, show user button with name */}
             {login == "Login" ? (
               <button onClick={handleClick} className={styles.userBtn}>
                 <div className={styles.user}>
@@ -135,17 +119,8 @@ function Navbar() {
               </button>
             )}
 
-            {/* <button onClick={handleClick} className={styles.userBtn}>
-              <div className={styles.user}>
-                <FaUser className={styles.icon} />
-                <span className={styles.login}>
-                  {login == "Login" ? "Login" : "Hi " + login}
-                </span>
-              </div>
-            </button> */}
-            {modal && <Modal modal={modal} setModal={setModal} />}
-            <a href="/prediction" onClick={() => setOpen(false)}>
-              Price Prediction
+            <a href="/chat" onClick={() => setOpen(false)}>
+              Open Chat System
             </a>
             <a href="/contact" onClick={() => setOpen(false)}>
               Contact
@@ -153,6 +128,9 @@ function Navbar() {
             <a href="/about" onClick={() => setOpen(false)}>
               About
             </a>
+
+            {/* Show modal if modal is true for mobile */}
+            {modal && <Modal modal={modal} setModal={setModal} />}
           </div>
         )}
       </nav>

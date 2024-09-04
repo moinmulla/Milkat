@@ -1,3 +1,4 @@
+/* SCSS function which can be used in multiple places*/
 @mixin alignment($fzi: 1.25rem, $fzl: 1.2rem){
     display: flex;
     flex-direction: column;
@@ -48,7 +49,7 @@
     padding: 2rem 4rem 4rem;
 }
 
-.heading_container{
+.headingContainer{
     margin: auto;
     background-color: #fff;
     border-radius: 10px;
@@ -90,10 +91,8 @@
     align-items: center;
     padding: 0 1rem;
     border-radius: 1rem;
-    // box-shadow: 0 0 8px #ddd;
 
     .timeslot{
-        // padding-bottom: 0.5rem;
         @include label_design();
 
         .warning{
@@ -103,7 +102,7 @@
             margin-bottom: 0.5rem
         }
 
-        .anytime_checkbox{
+        .anytimeCheckBox{
             color:var(--lighttext)
         }
     }
@@ -128,7 +127,6 @@
 
 
     input[type=file]::file-selector-button {
-        // border: 2px solid #6c5ce7;
         padding: 0.2rem 0.4rem;
         border-radius: 0.2rem;
         background-color: var(--svgbg);
@@ -163,40 +161,6 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    // .loading {
-    //     // position: absolute;
-    //     top: 100%;
-    //     left: 0;
-    //     right: 0;
-    //     padding: 8px;
-    //     background: white;
-    //     border: 1px solid #ccc;
-    //     // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    //   }
-        
-    //   .suggestionsDropdown {
-    //     position: absolute;
-    //     top: 100%;
-    //     left: 0;
-    //     right: 0;
-    //     background: white;
-    //     border: 1px solid #ccc;
-    //     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    //     max-height: 200px;
-    //     width: 100%;
-    //     margin: auto;
-    //     overflow-y: auto;
-    //     z-index: 1000; /* Ensure dropdown is above other elements */
-    //   }
-      
-    //   .suggestionItem {
-    //     padding: 8px;
-    //     cursor: pointer;
-    //   }
-      
-    //   .suggestionItem:hover {
-    //     background-color: #f0f0f0;
-    //   }
 }
 
 /*CSS breakpoints*/
@@ -206,7 +170,7 @@
         padding: 1rem;
     }
 
-    .heading_container{
+    .headingContainer{
         padding: 1rem;
     }
     .content{
@@ -220,7 +184,6 @@
     .content{
 
         .timeslot{
-            // padding: 0.5rem 0;
             @include label_design(1rem);
 
             .warning{
@@ -248,7 +211,7 @@
         padding: 0.75rem;
     }
 
-    .heading_container{
+    .headingContainer{
         width: 100%;
         padding: 0.75rem;
     }

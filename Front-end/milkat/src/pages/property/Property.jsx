@@ -1,34 +1,46 @@
 import React, { useEffect, useState, useContext } from "react";
-import { Carousel } from "react-bootstrap";
 import { useParams } from "react-router-dom";
+import { Carousel } from "react-bootstrap";
 import Button from "react-bootstrap/Button";
+import CryptoJS from "crypto-js";
+import Cookies from "js-cookie";
 import axios from "../../utils/axios";
 import Googlemaps from "../../components/googlemaps/Googlemaps";
 import Nearby from "../../components/nearby/Nearby";
+import Timeslot from "../../components/timeslot/Timeslot";
 import { FaBath, FaRegStar } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
 import { CiCircleInfo } from "react-icons/ci";
 import { FaBookmark, FaRegBookmark } from "react-icons/fa6";
 import { toast } from "react-toastify";
-import CryptoJS from "crypto-js";
-import Timeslot from "../../components/timeslot/Timeslot";
 import { LoginContext } from "../../hooks/LoginContext";
 import styles from "./property.module.scss";
 
 const Property = () => {
   const { pid } = useParams();
+
+  //get the role of the user from the global context(i.e. loginContext)
+  const { role } = useContext(LoginContext);
+
+  //used to confirm if the user has confirmed their booking for a time slot and update the state which helps to update the whole data of property(i.e. selected time slot will no longer appear in the list of time slots)
+  const [isConfirmed, setIsConfirmed] = useState(false);
+
+  //used to store the selected time slot
+  const [selectedSlot, setSelectedSlot] = useState(null);
+
+  //stores list of time slots selected by the admin of the property
+  const [timeSlots, setTimeSlots] = useState([]);
+
+  //used to know whether the user has bookmarked the property or not
+  const [saved, setSaved] = useState(false);
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [saved, setSaved] = useState(false);
-  const [value, setValue] = useState(0);
-  const { role } = useContext(LoginContext);
   const [admin, setAdmin] = useState(false);
-  const [timeSlots, setTimeSlots] = useState([]);
-  let maps_props;
+  const [ratings, setRatings] = useState(0);
 
+  // Format price into GBP
   const formatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
@@ -44,25 +56,20 @@ const Property = () => {
     6: "Saturday",
   };
 
-  // Handle selecting a time slot
+  // Handle selecting and unselecting a time slot
   const handleSelect = (slot) => {
     if (selectedSlot === slot) {
       setSelectedSlot(null);
-      setIsConfirmed(false);
     } else {
       setSelectedSlot(slot);
-      setIsConfirmed(false); // Reset confirmation on reselect
     }
   };
 
-  function forceUpdate() {
-    window.location.reload();
-  }
   // Handle confirming the selection
   const handleConfirm = () => {
     if (selectedSlot) {
-      if (!document.cookie) {
-        // console.log(document.cookie);
+      //check whether the user is logged in or not
+      if (Cookies.get("token") === undefined) {
         toast.error("Please login first", {
           position: "top-right",
           autoClose: 2000,
@@ -89,11 +96,12 @@ const Property = () => {
           .post("/booking", {
             tid: selectedSlot.tid,
             email: data.email,
-            time_slots: data.time_slots.filter(
+            timeslots: data.time_slots.filter(
               (slot) => slot.tid === selectedSlot.tid
             ),
           })
           .then((res) => {
+            setIsConfirmed(false);
             toast.success(res.data.message, {
               position: "top-right",
               autoClose: 2000,
@@ -104,7 +112,6 @@ const Property = () => {
               progress: undefined,
               theme: "colored",
             });
-            forceUpdate();
           })
           .catch((err) => {
             toast.error(err.response.data.message, {
@@ -119,14 +126,15 @@ const Property = () => {
             });
           });
       }
-      console.log("Selected slot:", selectedSlot.tid);
     } else {
       alert("Please select a time slot first.");
     }
   };
 
+  // Handle bookmarking the property
   const handleSave = () => {
-    if (!document.cookie) {
+    //check whether the user is logged in or not
+    if (Cookies.get("token") === undefined) {
       toast.error("Please login first", {
         position: "top-right",
         autoClose: 2000,
@@ -152,7 +160,6 @@ const Property = () => {
             progress: undefined,
             theme: "colored",
           });
-          //   forceUpdate();
         })
         .catch((err) => {
           toast.error(err.response.data.message, {
@@ -169,8 +176,10 @@ const Property = () => {
     }
   };
 
+  //Handle unbookmarking of the property
   const handleUnsave = () => {
-    if (!document.cookie) {
+    //check whether the user is logged in or not
+    if (Cookies.get("token") === undefined) {
       toast.error("Please login first", {
         position: "top-right",
         autoClose: 2000,
@@ -196,7 +205,6 @@ const Property = () => {
             progress: undefined,
             theme: "colored",
           });
-          //   forceUpdate();
         })
         .catch((err) => {
           toast.error(err.response.data.message, {
@@ -214,8 +222,56 @@ const Property = () => {
   };
 
   const handleTimeSlots = () => {
-    if (timeSlots.length === 0) {
-      toast.error("Please select atleast one time slot", {
+    //check whether the user is logged in or not
+    if (Cookies.get("token") !== undefined) {
+      if (timeSlots.length === 0) {
+        toast.error("Please select atleast one time slot", {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+      } else {
+        if (
+          window.confirm(
+            "Are you sure you want to add time slots to this property?"
+          ) === true
+        ) {
+          axios
+            .post("/timeslot", { timeslots: timeSlots, pid: pid })
+            .then((res) => {
+              toast.success(res.data.message, {
+                position: "top-right",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+              });
+              setTimeSlots([]);
+            })
+            .catch((err) => {
+              toast.error(err.response.data.message, {
+                position: "top-right",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: false,
+                draggable: true,
+                progress: undefined,
+                theme: "colored",
+              });
+            });
+        }
+      }
+    } else {
+      toast.error("Please login first", {
         position: "top-right",
         autoClose: 2000,
         hideProgressBar: false,
@@ -225,48 +281,17 @@ const Property = () => {
         progress: undefined,
         theme: "colored",
       });
-    } else {
-      if (
-        window.confirm(
-          "Are you sure you want to add time slots to this property?"
-        ) === true
-      ) {
-        axios
-          .post("/timeslot", { timeslots: timeSlots, pid: pid })
-          .then((res) => {
-            toast.success(res.data.message, {
-              position: "top-right",
-              autoClose: 2000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: false,
-              draggable: true,
-              progress: undefined,
-              theme: "colored",
-            });
-            setTimeSlots([]);
-          })
-          .catch((err) => {
-            toast.error(err.response.data.message, {
-              position: "top-right",
-              autoClose: 2000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: false,
-              draggable: true,
-              progress: undefined,
-              theme: "colored",
-            });
-          });
-      }
     }
   };
 
-  const handleReview = (num) => {
-    if (document.cookie) {
+  const handleRating = (num) => {
+    //check whether the user is logged in or not
+    if (Cookies.get("token") !== undefined) {
+      setRatings(1);
       axios
         .get("/rating", { params: { pid: pid, rating: num } })
         .then((res) => {
+          setRatings(0);
           toast.success(res.data.message, {
             position: "top-right",
             autoClose: 2000,
@@ -306,40 +331,36 @@ const Property = () => {
   };
 
   useEffect(() => {
-    const fetch_data = async () => {
+    //fetch property details
+    const fetchData = async () => {
       await axios
         .get(`/property/${pid}`)
         .then((res) => {
-          maps_props = {
-            location: res.data.property[0].location,
-            address: res.data.property[0].address_line1,
-          };
           setData(res.data.property[0]);
           setLoading(false);
         })
         .catch((err) => console.log(err));
     };
 
-    const fetch_saved_properties = async () => {
+    //check whether the property is bookmarked or not
+    const fetchSavedProperties = async () => {
       await axios
         .post("/saved", { pid: pid })
         .then((res) => {
-          console.log(res.data.message);
           setSaved(res.data.message);
-          console.log(data);
-          //   setSavedProperties(res.data.saved_properties);
         })
         .catch((err) => {
           setSaved(false);
         });
     };
 
-    fetch_data();
+    fetchData();
 
-    if (document.cookie) {
-      fetch_saved_properties();
+    //fetch the data to check whether the property is bookmarked or not, until the user is logged in
+    if (Cookies.get("token") !== undefined) {
+      fetchSavedProperties();
     }
-  }, []);
+  }, [ratings, isConfirmed]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -412,7 +433,7 @@ const Property = () => {
                 </span>
               ) : null}
 
-              <div className={styles.amount_container}>
+              <div className={styles.amountContainer}>
                 <span className={styles.amount}>
                   {formatter.format(data.price)} {!data.sale && "pcm"}
                 </span>
@@ -442,22 +463,21 @@ const Property = () => {
             </div>
             <div className={styles.address}>{data.property_type}</div>
             <div className={styles.details}>
-              <div className={styles.ind_details} title="Reception">
+              <div className={styles.indDetails} title="Reception">
                 <GiSofa size={30} className={styles.icon} />
-                <div className={styles.details_text}>
+                <div className={styles.detailsText}>
                   {data.reception} Reception
                 </div>
               </div>
-              <div className={styles.ind_details} title="Bedroom">
+              <div className={styles.indDetails} title="Bedroom">
                 <IoBed size={30} className={styles.icon} />
-                <div className={styles.details_text}>
-                  {/* {" "} */}
+                <div className={styles.detailsText}>
                   {data.bedroom} Bedrooms
                 </div>
               </div>
-              <div className={styles.ind_details} title="Bathroom">
+              <div className={styles.indDetails} title="Bathroom">
                 <FaBath size={30} className={styles.icon} />
-                <div className={styles.details_text}>
+                <div className={styles.detailsText}>
                   {data.bathroom} Bathrooms
                 </div>
               </div>
@@ -470,9 +490,8 @@ const Property = () => {
             <hr />
             <div className={styles.schedule}>
               <span className={styles.title}>Schedule</span>
-              {/* <div>{data.time_slots[0] && data.time_slots[0].start_time}</div> */}
               {data.time_slots && data.time_slots[0].anytime ? (
-                <div className={styles.anytime_details}>
+                <div className={styles.anytimeDetails}>
                   <div className={styles.anytime}>
                     Email address of the owner is given below, please contact
                     personally
@@ -482,12 +501,12 @@ const Property = () => {
                   </span>
                 </div>
               ) : (
-                <div className={styles.time_slots_container}>
-                  <div className={styles.time_slots_title}>
-                    <CiCircleInfo className={styles.info_icon} />
+                <div className={styles.timeSlotsContainer}>
+                  <div className={styles.timeSlotsTitle}>
+                    <CiCircleInfo className={styles.infoIcon} />
                     Select time slot for veiwing the property
                   </div>
-                  <div className={styles.time_slots}>
+                  <div className={styles.timeSlots}>
                     {data.time_slots ? (
                       <>
                         <div className={styles.time_slots_list}>
@@ -528,7 +547,7 @@ const Property = () => {
                         </Button>
                       </>
                     ) : (
-                      <div className={styles.no_slots}>
+                      <div className={styles.noSlots}>
                         <i>
                           All time slots are either booked or expired for this
                           property
@@ -540,11 +559,11 @@ const Property = () => {
               )}
               <div>
                 {admin ? (
-                  <div className={styles.admin_time_slots}>
+                  <div className={styles.adminTimeSlots}>
                     <Timeslot
                       timeSlots={timeSlots}
                       setTimeSlots={setTimeSlots}
-                      className={styles.admin_timeslot}
+                      className={styles.adminTimeslot}
                     />
                     <Button onClick={handleTimeSlots} className={styles.button}>
                       Confirm Selection
@@ -560,8 +579,8 @@ const Property = () => {
                 <span className={styles.title}>
                   Nearby places within 1 mile of area
                 </span>
-                <div className={styles.sub_title}>
-                  <CiCircleInfo className={styles.info_icon} />
+                <div className={styles.subTitle}>
+                  <CiCircleInfo className={styles.infoIcon} />
                   This information might not be up-to-date
                 </div>
               </div>
@@ -569,11 +588,11 @@ const Property = () => {
             </div>
 
             <hr />
-            <div className={styles.reviews}>
+            <div className={styles.ratings}>
               <div>
                 <span className={styles.title}>Ratings</span>
               </div>
-              <div className={styles.rating_details}>
+              <div className={styles.ratingDetails}>
                 <span className={styles.rating}>
                   Current ratings: {data.rating}
                 </span>
@@ -582,27 +601,27 @@ const Property = () => {
                 <FaRegStar
                   size={30}
                   className={styles.star}
-                  onClick={() => handleReview(5)}
+                  onClick={() => handleRating(5)}
                 />
                 <FaRegStar
                   size={30}
                   className={styles.star}
-                  onClick={() => handleReview(4)}
+                  onClick={() => handleRating(4)}
                 />
                 <FaRegStar
                   size={30}
                   className={styles.star}
-                  onClick={() => handleReview(3)}
+                  onClick={() => handleRating(3)}
                 />
                 <FaRegStar
                   size={30}
                   className={styles.star}
-                  onClick={() => handleReview(2)}
+                  onClick={() => handleRating(2)}
                 />
                 <FaRegStar
                   size={30}
                   className={styles.star}
-                  onClick={() => handleReview(1)}
+                  onClick={() => handleRating(1)}
                 />
               </div>
             </div>

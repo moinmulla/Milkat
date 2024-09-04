@@ -13,7 +13,8 @@ const Nearby = ({ location }) => {
   const temp = location.split(",");
   const latitude = temp[0];
   const longitude = temp[1];
-  //   console.log(lat, long);
+
+  //Get the nearby data from the backend for the corresponding property latitude and longitude
   useEffect(() => {
     axios
       .post("/nearby", { latitude, longitude })
@@ -25,8 +26,6 @@ const Nearby = ({ location }) => {
         setData({});
       });
   }, []);
-
-  //   console.log(location);
 
   return (
     <div>

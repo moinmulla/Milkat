@@ -5,6 +5,8 @@
     padding: 2rem;
 
     .images{
+        width: 800px;
+        margin: auto;
         .img{
             height: auto;
         }
@@ -14,19 +16,19 @@
         padding-top: 2rem;
 
         .title{
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
 
-        .sub_title{
-            font-size: 1rem;
-                margin-bottom: 0.5rem;
+        .subTitle{
+            font-size: 0.8rem;
+             margin-bottom: 0.5rem;
 
-                .info_icon{
-                    margin-bottom: 0.3rem;
-                    margin-right: 0.3rem;
-                }
+            .infoIcon{
+                margin-bottom: 0.3rem;
+                margin-right: 0.3rem;
+            }
         }
 
 
@@ -34,7 +36,7 @@
             
             margin-bottom: 0.5rem;
 
-            .amount_container{
+            .amountContainer{
                 display: flex;
                 justify-content: space-between;
 
@@ -44,43 +46,43 @@
             }
 
            .amount{
-                font-size: 2.5rem;
+                font-size: 2.2rem;
                 font-weight: 600;
                 margin-right: 0.5rem;
            }
 
            .month{
-                font-size: 1.5rem;
+                font-size: 1.2rem;
                 font-weight: 400;
            }
 
             .offer{
-                font-size: 1.5rem;
+                font-size: 1.3rem;
                 font-weight: 400;
             }
         }
 
         .headline{
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 500;
         }
 
         .address{
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 400;
         }
 
         .details{
             display: flex;
             gap: 1.5rem;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             margin-top: 0.5rem;
 
-            .ind_details{
+            .indDetails{
                 display: flex;
             }
 
-            .details_text{
+            .detailsText{
                 margin-left: 0.3rem;
             }
         }
@@ -96,16 +98,16 @@
         }
 
         .schedule{
-            .time_slots_title{
+            .timeSlotsTitle{
                 font-size: 1rem;
                 margin-bottom: 0.5rem;
 
-                .info_icon{
+                .infoIcon{
                     margin-bottom: 0.3rem;
                     margin-right: 0.3rem;
                 }
             }
-            .time_slots{
+            .timeSlots{
                 .time_slots_list{
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
@@ -130,7 +132,7 @@
 
         }
 
-        .admin_time_slots{
+        .adminTimeSlots{
             margin-top: 1.5rem;
             
             .button{
@@ -139,16 +141,16 @@
             }
         }
 
-        .reviews {
+        .ratings {
             display: inline-block;
 
-            .rating_details{
+            .ratingDetails{
                 margin-bottom: 0.5rem;
                 
             }
 
             .rating{
-                font-size: 1.2rem;
+                font-size: 1.1rem;
             }
 
             .stars{
@@ -156,19 +158,20 @@
                 gap: 0.3rem
             }
           }
-          
+
+
+          /* Add hover effects on stars*/
           .star {
-            color: #ccc; /* Default color for the stars */
+            color: #ccc; 
             cursor: pointer;
             transition: color 0.3s ease;
           }
           
           .star:hover,
           .star:hover ~ .star {
-            color: gold; /* Color when hovered */
+            color: gold; 
           }
           
-          /* Optional: Add focus effects for accessibility */
           .star:focus,
           .star:focus ~ .star {
             color: gold;
@@ -184,9 +187,14 @@
 
 @media(max-width: 1024px){
     .container{
+
+        .images{
+            width: 100%;
+        }
+
         .content{
             .schedule{
-                .time_slots{
+                .timeSlots{
                     .time_slots_list{
                         display: grid;
                         grid-template-columns: repeat(2, 1fr);
@@ -250,16 +258,16 @@
             }
     
             .schedule{
-                .time_slots_title{
+                .timeSlotsTitle{
                     font-size: 1rem;
                     margin-bottom: 0.5rem;
     
-                    .info_icon{
+                    .infoIcon{
                         margin-bottom: 0.3rem;
                         margin-right: 0.3rem;
                     }
                 }
-                .time_slots{
+                .timeSlots{
                     .time_slots_list{
                         display: grid;
                         grid-template-columns: repeat(2, 1fr);
@@ -315,7 +323,7 @@
 
                 
 
-                .details_text{
+                .detailsText{
                     margin-top: 0.2rem;
                     margin-left: 0;
                 }
@@ -337,15 +345,15 @@
             }
     
             .schedule{
-                .time_slots_title{
+                .timeSlotsTitle{
                     font-size: 1rem;
     
-                    .info_icon{
+                    .infoIcon{
                         margin-bottom: 0.3rem;
                         margin-right: 0.3rem;
                     }
                 }
-                .time_slots{
+                .timeSlots{
                     .time_slots_list{
                         display: grid;
                         grid-template-columns: repeat(1, 1fr);
@@ -365,7 +373,7 @@
     .container{
         .content{
             .schedule{
-                .time_slots{
+                .timeSlots{
                     .time_slot{
                         width: 100%;
                     }

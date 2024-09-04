@@ -5,6 +5,7 @@ function Contact() {
   useEffect(() => {
     const script = document.createElement("script");
 
+    //external script link to show the contact page
     script.src = "https://static-bundles.visme.co/forms/vismeforms-embed.js";
     script.async = true;
 

@@ -4,16 +4,23 @@ import Select from "react-select";
 import SearchBar from "../../components/searchbar/SearchBar";
 import { BsSortDown, BsSortDownAlt } from "react-icons/bs";
 import Card from "../../components/card/Card";
+import Pagination from "@mui/material/Pagination";
 import axios from "../../utils/axios";
 import styles from "./search.module.scss";
 
 function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const postcode_temp = searchParams.get("q")?.toUpperCase() || ""; // Ensure safe access using optional chaining (?.)
+  const postcodeTemp = searchParams.get("q")?.toUpperCase() || "";
   const navigate = useNavigate();
 
+  //Page number and total number of pages
+  const [page, setPage] = useState(searchParams.get("page") || 1);
+  const [count, setCount] = useState(1);
+
   const [data, setData] = useState([]);
+  //used to store the filtered data
   const [newData, setNewData] = useState([]);
+  const [newData2, setNewData2] = useState([]);
 
   const [sale, setSale] = useState(searchParams.get("sale") || "all");
   const [propertyType, setPropertyType] = useState(
@@ -30,7 +37,7 @@ function Search() {
     searchParams.get("receptions") || "None"
   );
 
-  const options_sort = [
+  const optionsSort = [
     {
       value: "original",
       label: <div>Original</div>,
@@ -53,7 +60,7 @@ function Search() {
     },
   ];
 
-  const options_filter = [
+  const optionsFilter = [
     { value: "all", label: <div>All</div> },
     { value: "Bungalow", label: <div>Bungalow</div> },
     { value: "Detached", label: <div>Detached</div> },
@@ -63,13 +70,13 @@ function Search() {
     { value: "Farms/land", label: <div>Farms/land</div> },
   ];
 
-  const options_sale = [
+  const optionsSale = [
     { value: "all", label: <div>All</div> },
     { value: "sale", label: <div>Sale</div> },
     { value: "rent", label: <div>Rent</div> },
   ];
 
-  const options_number = [
+  const optionsNumber = [
     { value: "None", label: <div>None</div> },
     { value: "1", label: <div>{"<"}1</div> },
     { value: "2", label: <div>{"<"}2</div> },
@@ -89,7 +96,7 @@ function Search() {
     } else if (value === "descending") {
       setNewData([...newData].sort((a, b) => b.price - a.price));
     } else {
-      setNewData(newData);
+      setNewData(newData2);
     }
   };
 
@@ -154,8 +161,8 @@ function Search() {
       );
     }
 
-    console.log(filteredData);
     setNewData(filteredData);
+    setNewData2(filteredData);
   };
 
   const updateSearchParams = (newParams) => {
@@ -167,16 +174,20 @@ function Search() {
       }
     }
 
-    navigate({ search: updatedParams.toString() }, { replace: true }); // Use replace to avoid history entry
+    // Use of replace to avoid history entry
+    navigate({ search: updatedParams.toString() }, { replace: true });
   };
 
+  // Fetch list of properties when postcode or page changes
   useEffect(() => {
-    const fetch_data = async () => {
+    // Fetch list of properties along with their details
+    const fetchData = async () => {
       await axios
         .get("/properties", {
-          params: { postcode: postcode_temp },
+          params: { postcode: postcodeTemp, page: page },
         })
         .then((res) => {
+          setCount(res.data.count);
           const fetchedData = res.data.properties;
 
           if (JSON.stringify(fetchedData) !== JSON.stringify(data)) {
@@ -191,14 +202,23 @@ function Search() {
         });
     };
 
-    if (postcode_temp) {
-      fetch_data();
+    if (postcodeTemp) {
+      fetchData();
     }
-  }, [postcode_temp]);
+  }, [postcodeTemp, page]);
 
+  // Sync page state with the URL
+  useEffect(() => {
+    const currentPage = parseInt(searchParams.get("page")) || 1;
+    if (currentPage !== page) {
+      setPage(currentPage);
+    }
+  }, [searchParams]);
+
+  // Apply filters when the variable mentioned changes
   useEffect(() => {
     applyFilters(data);
-  }, [postcode_temp, propertyType, sale, bedrooms, bathrooms, receptions]);
+  }, [postcodeTemp, propertyType, sale, bedrooms, bathrooms, receptions]);
 
   return (
     <div className={styles.container}>
@@ -210,14 +230,14 @@ function Search() {
           <SearchBar />
         </div>
         {data.length === 0 ? (
-          postcode_temp.length < 3 ? (
+          postcodeTemp.length < 3 ? (
             <span className={styles.noResults}>
               Enter at least 3 characters to search
             </span>
           ) : (
             <span className={styles.noResults}>
               No results found for area{" "}
-              <span className={styles.highlight}>{postcode_temp}</span>
+              <span className={styles.highlight}>{postcodeTemp}</span>
             </span>
           )
         ) : (
@@ -225,11 +245,8 @@ function Search() {
             <div className={styles.filterProperty}>
               <Select
                 placeholder="Select property type"
-                options={options_filter}
+                options={optionsFilter}
                 className={styles.select}
-                value={options_filter.find(
-                  (option) => option.value === propertyType
-                )}
                 onChange={(value) => {
                   handleFilter(value.value);
                 }}
@@ -239,13 +256,8 @@ function Search() {
               <div className={styles.filter}>
                 <Select
                   placeholder="Filter"
-                  options={options_sale}
+                  options={optionsSale}
                   className={styles.select}
-                  value={options_sale.find(
-                    (option) =>
-                      option.value ===
-                      (sale === 1 ? "sale" : sale === 0 ? "rent" : "all")
-                  )}
                   onChange={(value) => {
                     handleSale(value.value);
                   }}
@@ -254,7 +266,7 @@ function Search() {
               <div className={styles.sort}>
                 <Select
                   placeholder="Bedrooms"
-                  options={options_number}
+                  options={optionsNumber}
                   className={styles.select}
                   onChange={(value) => {
                     handleBedrooms(value.value);
@@ -264,7 +276,7 @@ function Search() {
               <div className={styles.sort}>
                 <Select
                   placeholder="Bathrooms"
-                  options={options_number}
+                  options={optionsNumber}
                   className={styles.select}
                   onChange={(value) => {
                     handleBathrooms(value.value);
@@ -274,7 +286,7 @@ function Search() {
               <div className={styles.sort}>
                 <Select
                   placeholder="Receptions"
-                  options={options_number}
+                  options={optionsNumber}
                   className={styles.select}
                   onChange={(value) => {
                     handleReceptions(value.value);
@@ -284,7 +296,7 @@ function Search() {
               <div className={styles.sort}>
                 <Select
                   placeholder="Sort"
-                  options={options_sort}
+                  options={optionsSort}
                   className={styles.select}
                   onChange={(value) => {
                     handleSort(value.value);
@@ -293,7 +305,12 @@ function Search() {
               </div>
             </div>
             <div className={styles.results}>
-              <Card data={newData} />
+              <Card
+                data={newData}
+                setPage={setPage}
+                count={count}
+                page={page}
+              />
             </div>
           </>
         )}

@@ -35,11 +35,11 @@
     align-items: center;
 }
 
-.header_text{
+.headerText{
     flex: 1;
 }
 
-.heading_text{
+.headingText{
     font-family: "Pally-Variable", sans-serif;
     font-size: 2.5rem;
 }
@@ -79,7 +79,7 @@
         margin-top: 1rem;
     }
 
-    .each_reviews{
+    .eachReviews{
         display: grid;
         grid-template-columns: auto auto auto;
         gap: 2rem;
@@ -90,7 +90,7 @@
 
 @media(max-width: 1024px){
     .reviews{
-        .each_reviews{
+        .eachReviews{
             grid-template-columns: auto auto;
         }
     }
@@ -105,7 +105,7 @@
         flex-direction: column-reverse;
     }
 
-    .heading_text{
+    .headingText{
         font-size: 2rem;
     }
 
@@ -126,7 +126,7 @@
 
 @media(max-width: 475px){
     .reviews{
-        .each_reviews{
+        .eachReviews{
             grid-template-columns: auto;
             gap: 1.5rem;
         }

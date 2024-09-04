@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
+import axios from "../../utils/axios";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import {
   Chart,
@@ -24,11 +25,25 @@ Chart.register(
   PointElement
 );
 
-function chart1() {
+function Chart1() {
+  const [newData, setNewData] = useState([]);
+  const [newLabels, setNewLabels] = useState([]);
+
+  //variable used to check if the data is loaded
+  const [open, setOpen] = useState(false);
+
   const options = {
     maintainAspectRatio: false,
     scales: {
       x: {
+        title: {
+          display: true,
+          text: "Year",
+          color: "black",
+          font: {
+            size: 14,
+          },
+        },
         ticks: {
           color: "black",
           font: {
@@ -38,10 +53,10 @@ function chart1() {
       },
       y: {
         beginAtZero: true,
-        max: 25,
+        max: Math.max(...newData) + 10000, // Dynamically adjust y-axis max
         title: {
           display: true,
-          text: "House Price",
+          text: "House Price\n(Average house price in England in June)",
           color: "black",
           font: {
             size: 14,
@@ -75,31 +90,47 @@ function chart1() {
     },
   };
 
-  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
   const data = {
-    labels,
+    labels: newLabels,
     datasets: [
       {
         label: "Price is £",
-        data: [12, 19, 3, 5, 2, 3, 15, 5, 2, 3,10,8],
+        data: newData,
         backgroundColor: "lightblue",
         borderColor: "blue",
-        borderWidth: 1,
+        borderWidth: 1.5,
       },
     ],
   };
 
+  useEffect(() => {
+    axios
+      .get("/propertiesPrice")
+      .then((res) => {
+        const prices = res.data.prices;
+        const updatedData = prices.map((item) => item.price);
+        const updatedLabels = prices.map((item) => item.year.toString());
+        setNewData(updatedData);
+        setNewLabels(updatedLabels);
+        setOpen(true);
+      })
+      .catch((err) => console.log(err));
+  }, []);
+
   return (
     <div>
-      <Line
-        data={data}
-        height={500}
-        options={options}
-        plugins={[ChartDataLabels]}
-      />
+      {open && newData.length > 0 ? (
+        <Line
+          data={data}
+          height={500}
+          options={options}
+          plugins={[ChartDataLabels]}
+        />
+      ) : (
+        <p>Loading chart data...</p>
+      )}
     </div>
   );
 }
 
-export default chart1;
+export default Chart1;

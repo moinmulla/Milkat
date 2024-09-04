@@ -11,21 +11,21 @@ import {
 function Footer() {
   return (
     <div className={styles.container}>
-      <div className={styles.footer_top}>
-        <div className={styles.footer_top_left}>
+      <div className={styles.footerTop}>
+        <div className={styles.footerTopLeft}>
           <img className={styles.logo} src="/images/house.png" alt="logo" />
-          <span className={styles.logo_text}>Milkat</span>
+          <span className={styles.logoText}>Milkat</span>
         </div>
-        <div className={styles.footer_top_right}>
+        <div className={styles.footerTopRight}>
           <div className={styles.features}>
             <p>Features</p>
             <ul>
               <a href="/listup">
                 <li>List Up</li>
               </a>
-              <a href="/prediction">
+              {/* <a href="/prediction">
                 <li>House Price Prediction</li>
-              </a>
+              </a> */}
               <a href="/chat">
                 <li>Open Chat System</li>
               </a>
@@ -54,8 +54,8 @@ function Footer() {
         </div>
       </div>
       <hr />
-      <div className={styles.footer_bottom}>
-        <div className={styles.footer_bottom_left}>
+      <div className={styles.footerBottom}>
+        <div className={styles.footerBottomLeft}>
           <p>© {new Date().getFullYear()} Milkat. All rights reserved.</p>
         </div>
         <div className={styles.footer_bottom_right}>

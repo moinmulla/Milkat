@@ -5,7 +5,7 @@ import styles from "./reviews.module.scss";
 function Reviews() {
   return (
     <div className={styles.container}>
-      <div className={styles.reviews_content}>
+      <div className={styles.reviewsContent}>
         <div className={styles.logo}>
           <FaUser className={styles.icon} />
         </div>

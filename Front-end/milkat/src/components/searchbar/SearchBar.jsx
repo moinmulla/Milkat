@@ -4,9 +4,9 @@ import { FaSearch } from 'react-icons/fa'
 import styles from './searchBar.module.scss'
 
 function SearchBar() {
-
   const navigate = useNavigate();
   const postcode = useRef();
+
   const handleSearch = ( event) => {
     event.preventDefault();
     if (postcode.current) {
@@ -19,7 +19,7 @@ function SearchBar() {
 
   return (
     <div className={styles.container}>
-        <div className={styles.search_icon}>
+        <div className={styles.searchIcon}>
             <FaSearch />
         </div>
         <div className={styles.input} >

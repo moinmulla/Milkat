@@ -1,5 +1,4 @@
 .carousel{
-    // width: 70vw;
     align-items: center;
     margin: auto;
 }
@@ -8,21 +7,13 @@
     height: 300px;
     object-fit: cover;
     border-radius: 25px;
-    // aspect-ratio:3/1  auto;
-    // height: 40vh;
 }
-
-/* CSS breakpoints*/
-
-// @media(max-width: 768px){
-//     .carousel{
-//         width: 80vw;
-//     }
-// }
   
-// @media(max-width: 640px){
-//     .carousel{
-//         width: 90vw;
-//     }
-// }
+/*CSS breakpoints*/
+
+@media(max-width: 475px){
+    .img{
+        height: 250px;
+    }
+}
   

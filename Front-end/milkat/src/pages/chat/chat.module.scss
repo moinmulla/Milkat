@@ -1,6 +1,4 @@
 @mixin alignment($fzi: 1.25rem, $fzl: 1.2rem){
-    // display: flex;
-    // flex-direction: column;
     margin: 1rem 0;
 
 
@@ -11,7 +9,7 @@
         align-content: center;
     }
 
-    .label_group{
+    .labelGroup{
         display: flex;
     }
 
@@ -56,7 +54,7 @@
         }
     }
 
-    .form_group{
+    .formGroup{
         @include alignment();
 
         .error{
@@ -68,7 +66,6 @@
     }
 
     .button{
-        // width: 100%;
         height: 3.5rem;
         padding: 0.8rem;
         border: none;

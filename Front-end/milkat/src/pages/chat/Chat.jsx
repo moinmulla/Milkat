@@ -31,7 +31,6 @@ function Chat() {
   });
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    console.log("Form data:", values);
     setOpen(true);
     axios
       .post("/chat", values)
@@ -66,8 +65,7 @@ function Chat() {
   };
 
   useEffect(() => {
-    axios.get("/chat_lookup").then((res) => {
-      console.log(res.data.message);
+    axios.get("/chatLookup").then((res) => {
       setData(res.data.message);
       setFilteredData(res.data.message);
     });
@@ -98,8 +96,8 @@ function Chat() {
         >
           {({ isSubmitting }) => (
             <Form>
-              <div className={styles.form_group}>
-                <div className={styles.label_group}>
+              <div className={styles.formGroup}>
+                <div className={styles.labelGroup}>
                   <label htmlfor="postcode" className={styles.label}>
                     Postcode:
                   </label>
@@ -116,13 +114,12 @@ function Chat() {
                   className={styles.error}
                 />
               </div>
-              <div className={styles.form_group}>
+              <div className={styles.formGroup}>
                 <Field
                   id="comments"
                   type="text"
                   name="comments"
                   placeholder="Enter your comments here"
-                  // value={formikRef.current.values.comments}
                 />
                 <ErrorMessage
                   name="comments"
@@ -157,7 +154,7 @@ function Chat() {
         />
       </div>
       <div className={styles.data}>
-        {filteredData
+        {filteredData.length
           ? filteredData.map((item) => (
               <div key={item.id}>
                 <div className={styles.chat}>
@@ -167,8 +164,7 @@ function Chat() {
                 </div>
               </div>
             ))
-          : "No data available"}
-        {/* {data && <div>{data[0].name}</div>} */}
+          : "No chats available"}
       </div>
     </div>
   );

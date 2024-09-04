@@ -16,6 +16,7 @@ import useDebounce from "../../hooks/useDebounce";
 import styles from "./listup.module.scss";
 
 function ListUp() {
+  //used to listen to form values
   const formikRef = useRef();
 
   const [timeSlots, setTimeSlots] = useState([]);
@@ -23,15 +24,16 @@ function ListUp() {
 
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 1000);
   const [postcode, setPostcode] = useState("");
   const [data, setData] = useState(null);
+
+  const debouncedSearch = useDebounce(search, 1000);
 
   const initialValues = {
     headline: "",
     description: "",
-    property_type: "",
-    sale_rent: "",
+    propertyType: "",
+    saleRent: "",
     price: "",
     images: [],
     bathroom: "",
@@ -42,7 +44,6 @@ function ListUp() {
     address_line2: "",
     address_line3: "",
     town: "",
-    // door_number: "",
     location: "",
   };
 
@@ -55,8 +56,8 @@ function ListUp() {
       .required("Required")
       .min(10, "Must be at least 10 characters")
       .max(600, "Must be 600 characters or less"),
-    property_type: Yup.string().required("Required"),
-    sale_rent: Yup.string().required("Required"),
+    propertyType: Yup.string().required("Required"),
+    saleRent: Yup.string().required("Required"),
     price: Yup.string().required("Required"),
     images: Yup.array()
       .required("Required")
@@ -74,13 +75,15 @@ function ListUp() {
     town: Yup.string()
       .required("Required")
       .matches(/^[^\W\d_]+\.?(?:[-\s][^\W\d_]+\.?)*$/, "Must be a valid town"),
-    // door_number: Yup.string().required("Required"),
-    location: Yup.string().matches(
-      /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/,
-      "Must be a valid latitude and longitude"
-    ),
+    location: Yup.string()
+      .required("Required")
+      .matches(
+        /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/,
+        "Must be a valid latitude and longitude"
+      ),
   });
 
+  //Store images in the images field in the form
   const handleImage = (e) => {
     const files = Array.from(e.currentTarget.files);
     formikRef.current.setFieldValue("images", [
@@ -91,19 +94,17 @@ function ListUp() {
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     console.log("Form data:", values);
-    // console.log(timeSlots);
 
-    // const time_slots_data = new
-
-    let modified_values = {};
+    //stores time slots if any else set to empty json
+    let modifiedValues = {};
     if (timeSlots.length > 0) {
-      modified_values = {
+      modifiedValues = {
         ...values,
         time_slots: JSON.stringify(timeSlots),
       };
     } else {
       setAnytimeBox(false);
-      modified_values = {
+      modifiedValues = {
         ...values,
         time_slots: [],
       };
@@ -112,16 +113,15 @@ function ListUp() {
     let images = values.images;
 
     const formData = new FormData();
+
+    //append images to formData
     images.forEach((image) => {
       formData.append("images", image);
     });
 
-    for (let key in modified_values) {
-      formData.append(key, modified_values[key]);
-    }
-
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
+    //append other reamining values to formData which makes formData hold all values of the form
+    for (let key in modifiedValues) {
+      formData.append(key, modifiedValues[key]);
     }
 
     axios
@@ -158,13 +158,14 @@ function ListUp() {
     setSubmitting(false);
   };
 
-  const handleSelect = async (e) => {
+  //Handle selecting a address from the list of address
+  const handleSelect = (e) => {
     setPostcode("");
-    await console.log(e.target.value);
+
+    //Set postcode, town, address line 1, address line 2, address line 3, and location selected from the list of addresses based on postcode
     axios
-      .post("/postcode_address", { url: e.target.value })
+      .post("/postcodeAddress", { url: e.target.value })
       .then((res) => {
-        console.log(res.data);
         const message = res.data.message;
         if (formikRef.current) {
           formikRef.current.setFieldValue("postcode", message.postcode);
@@ -182,17 +183,15 @@ function ListUp() {
             "location",
             `${message.latitude},${message.longitude}`
           );
-
-          // Trigger form validation
-          // formikRef.validateForm();
         }
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        setLoading(false); // Set loading state
+        setLoading(false);
       });
   };
 
+  //Debounce search query runs only after user stops typing for 500ms
   useEffect(() => {
     const loadData = async () => {
       await axios
@@ -203,7 +202,6 @@ function ListUp() {
         })
         .catch((error) => {
           console.log(error);
-          // setPostcode({ success: false, message: "Error fetching data" });
         });
 
       setLoading(false);
@@ -213,7 +211,7 @@ function ListUp() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.heading_container}>
+      <div className={styles.headingContainer}>
         <div className={styles.heading}>
           <span className={styles.fancy}>List up your property</span>
         </div>
@@ -224,6 +222,7 @@ function ListUp() {
             validationSchema={validationSchema}
             onSubmit={handleSubmit}
           >
+            {/* Allow form to be submit and disable the submit button if the form is submitting */}
             {({ isSubmitting, handleChange }) => (
               <Form className="form">
                 <div className={styles.formGroup}>
@@ -279,13 +278,13 @@ function ListUp() {
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="property_type" className={styles.label}>
+                  <label htmlFor="propertyType" className={styles.label}>
                     Property Type*
                   </label>
                   <Field
                     component="select"
-                    id="property_type"
-                    name="property_type"
+                    id="propertyType"
+                    name="propertyType"
                     placeholder="Select property type"
                   >
                     <option value="" disabled selected>
@@ -299,19 +298,19 @@ function ListUp() {
                     <option value="Farms/land">Farms/land</option>
                   </Field>
                   <ErrorMessage
-                    name="property_type"
+                    name="propertyType"
                     className={styles.error}
                     component="div"
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="sale_rent" className={styles.label}>
+                  <label htmlFor="saleRent" className={styles.label}>
                     Sale/Rent*
                   </label>
                   <Field
                     component="select"
-                    id="sale_rent"
-                    name="sale_rent"
+                    id="saleRent"
+                    name="saleRent"
                     placeholder="Select property for sale/rent"
                   >
                     <option value="" disabled selected>
@@ -321,7 +320,7 @@ function ListUp() {
                     <option value="rent">Rent</option>
                   </Field>
                   <ErrorMessage
-                    name="sale_rent"
+                    name="saleRent"
                     className={styles.error}
                     component="div"
                   />
@@ -431,7 +430,10 @@ function ListUp() {
                     component="div"
                   />
 
+                  {/* Display loading message when addresses are loading */}
                   {loading && <div className={styles.loading}>Loading...</div>}
+
+                  {/* List of addresses got from adressPostcode API from backend */}
                   {postcode?.suggestions && (
                     <select
                       id="data"
@@ -515,6 +517,7 @@ function ListUp() {
                     component="div"
                   />
                 </div>
+                {/* Location input field is hidden and must be filled. This is only filled by selecting address from the list of addresses got from postcodeAdddress API */}
                 <div className={styles.formGroup} style={{ display: "none" }}>
                   <label htmlFor="location" className={styles.label}>
                     Location
@@ -560,7 +563,7 @@ function ListUp() {
                         />
                       }
                       label="Anytime"
-                      className={styles.anytime_checkbox}
+                      className={styles.anytimeCheckBox}
                     />
                   </FormGroup>
                 </div>

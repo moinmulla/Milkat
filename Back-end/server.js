@@ -28,17 +28,18 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_SECRET
 })
 
+//set cors so that frontend can access backend
 app.use(cors({
     origin: [process.env.ORIGIN],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Custom-Header',
 }));
-// app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+//used to store email id of logged in user
 let G_EMAIL = "a@b.com"
 
 const pool = mysql2.createPool({
@@ -75,6 +76,14 @@ const hashPassword = async (password) => {
     return hashedPassword;
 };
 
+//middleware to handle errors
+app.use((error, req, res, next) => {
+    const message = error.message || "Internal Server Error";
+    const statusCode = error.statusCode || 500;
+    console.log("Message:",error);
+})
+
+//middleware to verify token and check whether the user exists in the database or not before accessing any route otherwise cookies will be deleted and user will be logged out
 const verifyToken = (req, res, next) => {
     const token = req.cookies.token||"abcd";
     
@@ -83,23 +92,24 @@ const verifyToken = (req, res, next) => {
             return res.status(401).json({ success: false, message: 'Unauthorized: Access token missing' });
         }
 
-        const decrypted_token = CryptoJS.AES.decrypt(token, process.env.CRYPTO_SECRET).toString(CryptoJS.enc.Utf8);
-        const email_temp = decrypted_token.match(new RegExp(`email=([^;]+)`));
-        const token_temp = decrypted_token.match(new RegExp(`token=([^;]+)`));
+        const decryptedToken = CryptoJS.AES.decrypt(token, process.env.CRYPTO_SECRET).toString(CryptoJS.enc.Utf8);
+        const emailTemp = decryptedToken.match(new RegExp(`email=([^;]+)`));
+        const tokenTemp = decryptedToken.match(new RegExp(`token=([^;]+)`));
 
-        const email = email_temp[1];
+        const email = emailTemp[1];
         G_EMAIL = email;
-        const token1 = token_temp[1];
+        const token1 = tokenTemp[1];
 
         pool.query(`SELECT * FROM user WHERE email = ?`, [email],async  (err, result, fields) => {
             if (err) {
-                return res.status(500).json({ success: false, message: "Mysql email search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if (result.length == 0) {
                 res.clearCookie("token");
                 res.status(401).json({ success: false, message: 'Already logged in into other device' });
                 res.end();
             } else {
+                //check whether token stored in database matches token in cookie
                 if(result[0].token === token){
                     await jwt.verify(token1, process.env.JWT_SECRET, (err, decode) => {
                         if (err) {
@@ -110,6 +120,7 @@ const verifyToken = (req, res, next) => {
                                 res.status(401).json({ success: false, message: 'Unauthorized: Token expired' });
                                 res.end();
 
+                                //remove token from database if token is expired
                                 pool.query(`UPDATE user SET token=null WHERE email = ?`, [email], (err1, result1, fields1) => {
                                     if(err1){
                                         console.log("Error fetching the data from database");
@@ -128,7 +139,6 @@ const verifyToken = (req, res, next) => {
                     });
                     
                 }else{
-                    console.log("cookie dont matched2");
                     res.clearCookie("token");
                     res.status(401).json({ success: false, message: 'Already logged in into other device' });
                     res.end();
@@ -136,7 +146,6 @@ const verifyToken = (req, res, next) => {
             }
         });
     }catch(error){
-        console.error('Decryption error:', error);
         return res.status(401).json({ error: 'Unauthorized: Invalid access token' });
     }
 }
@@ -145,21 +154,21 @@ const verifyToken = (req, res, next) => {
 app.post("/register", async (req, res) => {
     const { name, email, password, role } = req.body;
 
-    let hashedpassword = await hashPassword(password);
+    let hashedPassword = await hashPassword(password);
 
     try {
-
+        //check if user already exists
         pool.query(`SELECT * FROM user WHERE email = ?`, [email], (err, result, fields) => {
             if (err) {
-                return res.status(500).json({ success: false, message: "Mysql email search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if (result.length > 0) {
                 return res.status(409).json({ success: false, message: "User already exists" });
             } else {
-                pool.query("INSERT INTO user (name, email, password, admin) VALUES (?, ?, ?, ?)", [name, email, hashedpassword, role], (err1, result1, fields1) => {
+                //insert user
+                pool.query("INSERT INTO user (name, email, password, admin) VALUES (?, ?, ?, ?)", [name, email, hashedPassword, role], (err1, result1, fields1) => {
                     if (err1) {
                         console.log(err1);
-                        console.log({name, email, hashedpassword, role});
                         return res.status(500).json({ success: false, message: "Mysql insert user error" });
                     }
                     return res.status(200).json({ success: true, message: "Registered successfully" });
@@ -177,10 +186,10 @@ app.post("/login", async (req, res) => {
     let role;
 
     try {
+        //check user's email and password match
         pool.query(`SELECT * FROM user WHERE email = ?`, [email], async (err, result, fields) => {
-            // console.log(result);
             if (err) {  
-                return res.status(500).json({ success: false, message: "Mysql email search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             } 
             if(result.length === 0) {
                 res.status(401).json({success:false, message:"Provided email does not registered"});
@@ -194,26 +203,25 @@ app.post("/login", async (req, res) => {
                         role = "user";
                     }
 
-                    // const name = result[0].name.split(' ')[0];
                     const name = result[0].name;
 
                     const token = jwt.sign({ email: email, role: role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-                    const temp_token = `token=${token};email=${email};role=${role};name=${name}`;
+                    const tempToken = `token=${token};email=${email};role=${role};name=${name}`;
 
-                    const encrypted_token = CryptoJS.AES.encrypt(temp_token, process.env.CRYPTO_SECRET).toString();
+                    const encryptedToken = CryptoJS.AES.encrypt(tempToken, process.env.CRYPTO_SECRET).toString();
 
-                    res.cookie("token", encrypted_token, { 
+                    res.cookie("token", encryptedToken, { 
                         // httpOnly: true, 
                         // sameSite: 'none', 
                         // secure: true, 
                         maxAge: 3600000 
                     });
 
-
-                    pool.query(`UPDATE user SET token = ? WHERE email = ?`, [encrypted_token, email], (err1, result1, fields1) => {
+                    //add token to database
+                    pool.query(`UPDATE user SET token = ? WHERE email = ?`, [encryptedToken, email], (err1, result1, fields1) => {
                         if (err1) {
-                            return res.status(500).json({ success: false, message: "Mysql token update error" });
+                            return res.status(500).json({ success: false, message: "Something went wrong" });
                         }
                         if(result1.length === 0) {
                             return res.status(500).json({ success: false, message: "No data found" });
@@ -221,7 +229,6 @@ app.post("/login", async (req, res) => {
                             //token added to database
                         }
                     });
-
 
                     return res.status(200).json({ success: true, message: "Logged in successfully" });
                 } else {
@@ -237,6 +244,7 @@ app.post("/login", async (req, res) => {
 app.get("/logout", verifyToken, (req, res) => {
     res.clearCookie("token");
     try{
+        //remove token from database
         pool.query(`UPDATE user SET token = NULL WHERE email = ?`, [G_EMAIL], (err, result, fields) => {
             if(err){
                 console.log(err);
@@ -251,12 +259,13 @@ app.get("/logout", verifyToken, (req, res) => {
 
 app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
     const images = req.files;
-    const { headline,description,property_type,sale_rent,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
+    const { headline,description,propertyType,saleRent,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location} = req.body;
+    
+    //change postcode format (e.g. LE1 2FT)
     const postcode1 = postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();
-    console.log(postcode1);
 
     let sale=0;
-    if(sale_rent == "sale"){
+    if(saleRent == "sale"){
         sale=1;
     }
 
@@ -264,90 +273,46 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
         if(G_EMAIL == "a@b.com")
             throw Error("Not authorized");
 
+        //check if user is admin
         pool.query(`SELECT admin From user where email=?`, [G_EMAIL], (err, result, fields) => {
             if(err){
                 console.log(err);
-                return res.status(500).json({ success: false, message: "Mysql property search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if(result.length == 0){
                 return res.status(400).json({ success: true, message:"No user found" });
             }
+            //only admin can add properties
             if(result[0].admin == 1){
-                pool.query("INSERT INTO properties (email,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode1,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
+                pool.query("INSERT INTO properties (email,headline,description,property_type,sale,price,bathroom,bedroom,reception,postcode,town,address_line1,address_line2,address_line3,location) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [G_EMAIL,headline,description,propertyType,sale,price,bathroom,bedroom,reception,postcode1,town,address_line1,address_line2,address_line3,location], (err1, result1, fields1) => {
                     if(err1){
                         console.log(err1);
-                        return res.status(500).json({ success: false, message: "Mysql insert property error" });
+                        return res.status(500).json({ success: false, message: "Something went wrong" });
                     }
                     console.log(result1.insertId);
         
-                    const insert_id = result1.insertId;
+                    //id of inserted property
+                    const insertId = result1.insertId;
                     
                     //inserting time slots into time_slots table
-                    let time_slots1=[];
+                    let timeSlots1=[];
                     if(req.body.time_slots &&req.body.time_slots.length>0){
-                        const time_slots = JSON.parse(req.body.time_slots);
-                        time_slots1 = time_slots.map(obj=>[insert_id,new Date(obj.start),new Date(obj.end),0]);
+                        const timeSlots = JSON.parse(req.body.time_slots);
+                        timeSlots1 = timeSlots.map(obj=>[insertId,new Date(obj.start),new Date(obj.end),0]);
                     }else{
-                        time_slots1 =[[insert_id,null,null,1]];
+                        timeSlots1 =[[insertId,null,null,1]];
                     }
         
-                    pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [time_slots1], (err2, result2, fields2) => {
+                    pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [timeSlots1], (err2, result2, fields2) => {
                         if(err2){   
                             console.log(err2);
                             return res.status(500).json({ success: false, message: "Error inserting time slots" });
                         }
                     })
         
-        
-                    /************** Uploading an image to cloudinary along with customizable watermark ****************************/
-        
-        
-                    /*
-                    //uploading images to cloudinary
+                    //Uploading an image to cloudinary, using that image for watermark using picnie 
                     images.map(async (file) => {
-                        let cld_upload_stream = await cloudinary.uploader.upload_stream(
-                            {
-                              folder: "test"
-                            },
-                            async(err1,result1)=>{
-                                if(err1){
-                                    console.log(err1);
-                                }
-            
-                                // Transform the image: auto-crop to square aspect_ratio
-                                const autoCropUrl = await cloudinary.url(result1.public_id, {
-                                    // background:"gen_fill"
-                                    crop: 'auto_pad',
-                                    gravity: 'auto',
-                                    width: 1200,
-                                    height: 800,
-                                    transformation: [
-                                        {overlay: {font_family: "Arial", font_size: 250, text: "Milkat"}},
-                                        {flags: "layer_apply", gravity: "south_east", y: "0.08", x: "0.08", opacity: 30},
-                                    ]
-                                });
-                        
-                                pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,autoCropUrl], (err2, result2, fields2) => {
-                                    if(err2){   
-                                        console.log(err2);
-                                        return res.status(500).json({ success: false, message: "Error uploading image" });
-                                    }
-                                })
-                            }
-                        );
-                        
-                        streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
-                    })
-                    */
-        
-                    /************** Uploading an image to cloudinary along with customizable watermark ****************************/
-        
-        
-        
-                    /************** Uploading an image to cloudinary using that image for watermark using picnie ****************************/
-        
-                    images.map(async (file) => {
-                        let cld_upload_stream = await cloudinary.uploader.upload_stream(
+                        let cloudUploadStream = await cloudinary.uploader.upload_stream(
                             {
                               folder: "test"
                             },
@@ -356,9 +321,8 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                                     console.log(err1);
                                 }
                 
-                                // Transform the image: auto-crop to square aspect_ratio
+                                // Transform the image: auto-pad to square aspect_ratio
                                 const autoCropUrl = await cloudinary.url(result1.public_id, {
-                                    // background:"gen_fill"
                                     crop: 'auto_pad',
                                     gravity: 'auto',
                                     width: 1200,
@@ -366,7 +330,6 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                                     
                                 });
                         
-                                console.log(autoCropUrl);
                                 const data ={
                                     "project_id": 1630,
                                     "background_image_url":`${autoCropUrl}`,
@@ -377,7 +340,8 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                                 }
                             
                                 await axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
-                                    pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insert_id,response.data.url], (err3, result3, fields3) => {
+                                    //inserting image into images table for corresponding property
+                                    pool.query("INSERT INTO images (pid,path) VALUES (?, ?)", [insertId,response.data.url], (err3, result3, fields3) => {
                                         if(err3){   
                                             console.log(err3);
                                             return res.status(500).json({ success: false, message: "Error uploading image" });
@@ -388,7 +352,7 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                             }
                         );
                         
-                        streamifier.createReadStream(file.buffer).pipe(cld_upload_stream);
+                        streamifier.createReadStream(file.buffer).pipe(cloudUploadStream);
                     });
         
                     return res.status(200).json({ success: true, message: "Property added successfully" });
@@ -411,7 +375,7 @@ app.get("/deleteProperty", verifyToken, (req, res) => {
         pool.query(`DELETE FROM properties WHERE pid = ?`, [pid], (err, result, fields) => {
             if(err){
                 console.log(err);
-                return res.status(500).json({ success: false, message: "Mysql property search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             return res.status(200).json({ success: true, message: "Property deleted successfully" });
         })
@@ -421,27 +385,29 @@ app.get("/deleteProperty", verifyToken, (req, res) => {
     }
 })
 
+//add time slots for a particular property by admin
 app.post("/timeslot",verifyToken, (req, res) => {
     const {timeslots,pid}=req.body;
-    console.log(timeslots);
 
-    // const timeslots_temp = JSON.parse(timeslots);
+    //value holds in the format [{pid,start_time,end_time,anytime}]
     let timeslots1 = timeslots.map(obj=>[pid,new Date(obj.start),new Date(obj.end),0]);
 
     try{
+        //fetch anytime from time_slots table
         pool.query("SELECT anytime FROM time_slots WHERE property_id = ? ",[pid],(err,result,fields)=>{
             if(err){
                 console.log(err);
-                return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if(result.length==0){
                 res.status(400).json({ success: true, message: "No such property exists" });
             }
+            //delete the entry from time_slots table if the property has anytime checked and then insert the new time slots with anytime = 0
             if(result[0].anytime){
                 pool.query("DELETE FROM time_slots WHERE property_id = ? AND anytime = 1",[pid],(err1,result1,fields1)=>{
                     if(err1){
                         console.log(err1);
-                        return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
+                        return res.status(500).json({ success: false, message: "Something went wrong" });
                     }
                     pool.query("INSERT INTO time_slots (property_id,start_time,end_time,anytime) VALUES ?", [timeslots1], (err2, result2, fields2) => {
                         if(err2){   
@@ -470,54 +436,63 @@ app.post("/timeslot",verifyToken, (req, res) => {
 app.get("/rating",verifyToken, (req, res) => {
     let {pid,rating} = req.query;
     
-    pool.query("SELECT rating FROM user WHERE email = ? ",[G_EMAIL],(err,result,fields)=>{
-        if(err){
-            console.log(err);
-            return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
-        }
-        if(result.length==0){
-            res.status(400).json({ success: true, message: "No user exists" });
-        }
-        if(result[0].rating){
-            res.status(400).json({ success: true, message: "Already rated" });
-        }else{
-            pool.query("SELECT rating,rating_count FROM properties WHERE pid = ? ",[pid],(err1,result1,fields1)=>{
-                if(err1){
-                    console.log(err1);
-                    return res.status(500).json({ success: false, message: "Mysql timeslot search error" });
-                }
-                if(result1.length==0){
-                    res.status(400).json({ success: true, message: "No such property exists" });
-                }
-                const old_rating = result1[0].rating;
-                const old_rating_count = result1[0].rating_count;
-                const new_rating_count = old_rating_count+1;
-                const new_rating = ((old_rating*old_rating_count)+rating)/new_rating_count;
-                
-                pool.query("UPDATE properties SET rating = ?, rating_count = ? WHERE pid = ? ",[new_rating,new_rating_count,pid],(err2,result2,fields2)=>{
-                    if(err2){
-                        console.log(err2);
-                        return res.status(500).json({ success: false, message: "Mysql search error" });
+    try{
+        pool.query("SELECT rating FROM rating WHERE uid = (SELECT uid FROM user WHERE email = ?) AND pid = ? ",[G_EMAIL ,pid],(err,result,fields)=>{
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            if(result.length!=0 && result[0].rating){
+                res.status(400).json({ success: true, message: "Already rated" });
+            }else{
+                //fetch old rating and old rating count for a corresponding property
+                pool.query("SELECT rating,rating_count FROM properties WHERE pid = ? ",[pid],(err1,result1,fields1)=>{
+                    if(err1){
+                        console.log(err1);
+                        return res.status(500).json({ success: false, message: "Something went wrong" });
                     }
-                    pool.query("UPDATE user SET rating = 1 WHERE email = ? ",[G_EMAIL],(err3,result3,fields3)=>{
-                        if(err3){
-                            console.log(err3);
-                            return res.status(500).json({ success: false, message: "Mysql search error" });
+                    if(result1.length==0){
+                        res.status(400).json({ success: true, message: "No such property exists" });
+                    }
+                    const oldRating = result1[0].rating;
+                    const oldRatingCount = result1[0].rating_count;
+                    const newRatingCount = oldRatingCount+1;
+
+                    //calculate new rating and round it to 1 decimal
+                    const newRating = parseFloat(((parseFloat(oldRating)*parseFloat(oldRatingCount))+parseFloat(rating))/parseFloat(newRatingCount)).toFixed(1);
+                    
+                    pool.query("UPDATE properties SET rating = ?, rating_count = ? WHERE pid = ? ",[newRating,newRatingCount,pid],(err2,result2,fields2)=>{
+                        if(err2){
+                            console.log(err2);
+                            return res.status(500).json({ success: false, message: "Something went wrong" });
                         }
+                        //update the rating table for corresponding user and property (as user can only rate a property once)
+                        pool.query("INSERT INTO rating (uid,pid,rating) VALUES ((SELECT uid FROM user WHERE email = ?),?,?)",[G_EMAIL,pid,1],(err3,result3,fields3)=>{
+                            if(err3){
+                                console.log(err3);
+                                return res.status(500).json({ success: false, message: "Something went wrong" });
+                            }
+                            res.status(200).json({ success: true, message: "Rating added successfully" });
+                        })
                     })
-                    res.status(200).json({ success: true, message: "Rating added successfully" });
                 })
-            })
-        }
-    })
+            }
+        })
+    }
+    catch(error){
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
 })
 
+
+//used to fetch nearby details for a property
 app.post("/nearby", (req, res) => {
     let {latitude, longitude} = req.body;
-    // console.log(latitude, longitude);
+    
+    //external api to fetch nearby details
     axios.get(`https://api.geoapify.com/v2/places?categories=commercial.supermarket,leisure.park,catering.restaurant,public_transport.bus,service.vehicle.fuel,education.school&filter=circle:${longitude},${latitude},1700&bias=proximity:${longitude},${latitude}&apiKey=${process.env.GEOAPIFY_API_KEY}`)
     .then((response) => {
-        // console.log(response.data);
+        
         let bus = response.data.features.filter((data)=>data.properties.categories.includes("public_transport.bus")).length;
         let school = response.data.features.filter((data)=>data.properties.categories.includes("education.school")).length;
         let fuel = response.data.features.filter((data)=>data.properties.categories.includes("service.vehicle.fuel")).length;
@@ -527,6 +502,8 @@ app.post("/nearby", (req, res) => {
         axios.get(`https://api.geoapify.com/v2/places?categories=public_transport.train&filter=circle:${longitude},${latitude},1700&bias=proximity:${longitude},${latitude}&apiKey=${process.env.GEOAPIFY_API_KEY}`)
         .then((response) => {
             let train = response.data.features.filter((data)=>data.properties.categories.includes("public_transport.train")).length;
+
+            //stores number of nearby facilities for a particular property
             let temp = {
                 "bus": bus,
                 "school": school,
@@ -538,35 +515,56 @@ app.post("/nearby", (req, res) => {
             return res.status(200).json({ success: true, message: temp });
         })
         .catch((error) => {
-            return res.status(500).json({ success: false, message: error });
+            return res.status(500).json({ success: false, message: "Something went wrong" });
         })
     })
     .catch((error) => {
-        return res.status(500).json({ success: false, message: error });
+        return res.status(500).json({ success: false, message: "Server error" });
     })
 })
 
+//used to fetch properties based on postcode
 app.get("/properties", (req, res) =>  {
-    let {postcode} = req.query;
+    let {postcode,page} = req.query;
+
+    if(page==undefined){
+        page=1;
+    }
+
+    //number of items per page
+    const limit = 9;
+    //total number of pages
+    let count=1;
+    const offset=(page-1)*limit;
+    
     if(postcode.length < 3){
         return res.status(400).json({ success: false, message: "Enter more than 3 characters" });
     }
 
-    const postcode1 = postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2');
-
+    //change postcode format (e.g. LE1 2FT)
+    const postcode1 = postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();
 
     try{
+        //get total number of properties for pagination
+        pool.query(`SELECT count(*) as count FROM properties where postcode like "${postcode1}%"`, (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            count = Math.floor(result[0].count/limit+0.9999);
+            
+        })
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths,rating FROM properties p where postcode like "${postcode1}%"`, (err1, result1, fields1) => {
+        //get list of properties along with image paths and store in an array
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where postcode like "${postcode1}%" limit ${limit} offset ${offset}`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
-                return res.status(500).json({ success: false, message: "Mysql property search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if(result1.length == 0){
                 return res.status(400).json({ success: true, message:"No properties found" });
             }
-            // console.log(result1);
-            return res.status(200).json({ success: true, properties: result1 });
+            return res.status(200).json({ success: true, properties: result1, count: count });
         })
     }
     catch(error){
@@ -574,6 +572,7 @@ app.get("/properties", (req, res) =>  {
     }
 })
 
+//get property details based on property id
 app.get("/property/:id", (req, res) => {
     let {id} = req.params;
 
@@ -582,36 +581,33 @@ app.get("/property/:id", (req, res) => {
         pool.query(`SELECT * FROM time_slots where property_id="${id}"`, (err, result, fields) => {
             if(err){
                 console.log(err);
-                // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
             }
             if(result.length == 0){
-                // console.log("No time slots found");
-                // return res.status(400).json({ success: true, message:"No time slots found" });
+                //no time slots
             }
             const today = new Date().getTime();
             result.map((item) => {
-                const st_time = new Date(item.start_time).getTime();
-                if(today>=st_time){
+                const startTime = new Date(item.start_time).getTime();
+                if(today>=startTime){
                     pool.query(`DELETE FROM time_slots where time_slot_id="${item.time_slot_id}" AND anytime!=1`, (err1, result1, fields1) => {
                         if(err1){
                             console.log(err1);
-                            // return res.status(500).json({ success: false, message: "Mysql time slots search error" });
                         }
                     })
                 }
             })
-            // console.log(result);
         })
 
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, rating, (SELECT JSON_ARRAYAGG(JSON_OBJECT("tid",t.time_slot_id,"start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid AND t.used=0) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
+        //get property details along with image paths and store in an array
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths, (SELECT JSON_ARRAYAGG(JSON_OBJECT("tid",t.time_slot_id,"start_time",t.start_time,"end_time",t.end_time,"anytime",t.anytime)) FROM time_slots t WHERE t.property_id = p.pid AND t.used=0) AS time_slots FROM properties p where pid="${id}"`, (err1, result1, fields1) => {
             if(err1){
                 console.log(err1);
-                return res.status(500).json({ success: false, message: "Mysql property search error" });
+                return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             if(result1.length == 0){
                 return res.status(400).json({ success: true, message:"No property found" });
             }
-            // console.log(result1.time_slots);
+            //add empty time slots if no time slots are available
             if(!result1.time_slots){
                 result1.time_slots = [{}];
             }
@@ -624,13 +620,14 @@ app.get("/property/:id", (req, res) => {
     }
 });
 
+//check whether property is bookmarked or not
 app.post("/saved",verifyToken, (req, res) => {
     let {pid} = req.body;
     
     pool.query(`SELECT * from user_saved_properties WHERE uid=(SELECT uid FROM user WHERE email="${G_EMAIL}") AND pid="${pid}"`, (err1, result1, fields1) => {
         if(err1){
             console.log(err1);
-            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+            return res.status(500).json({ success: false, message: "Something went wrong" });
         }
         if(result1.length == 0){
             return res.status(400).json({ success: true, message:"Property not saved" });
@@ -639,81 +636,78 @@ app.post("/saved",verifyToken, (req, res) => {
     })
 })
 
+//Bookmark property
 app.post("/save",verifyToken, (req, res) => {
     let {pid} = req.body;
-    console.log(pid);
 
     pool.query(`INSERT INTO user_saved_properties (pid, uid) VALUES ("${pid}", (SELECT uid FROM user WHERE email="${G_EMAIL}"))`, (err1, result1, fields1) => {
         if(err1){
             console.log(err1);
-            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+            return res.status(500).json({ success: false, message: "Something went wrong" });
         }
         return res.status(200).json({ success: true, message: "Property saved" });
     })
 })
 
+//Unbookmark property
 app.post("/unsave",verifyToken, (req, res) => {
     let {pid} = req.body;
-    console.log(pid);
 
     pool.query(`DELETE FROM user_saved_properties WHERE pid="${pid}" AND uid=(SELECT uid FROM user WHERE email="${G_EMAIL}")`, (err1, result1, fields1) => {
         if(err1){
             console.log(err1);
-            return res.status(500).json({ success: false, message: "Mysql time slots search error" });
+            return res.status(500).json({ success: false, message: "Something went wrong" });
         }
         return res.status(200).json({ success: true, message: "Property unsaved" });
     })
 })
 
+//Book time slot for property and send email to both owner and user
 app.post("/booking", verifyToken,async (req, res) => {
-    let {tid, email, time_slots} = req.body;
-
-    console.log(time_slots[0].start_time);
+    let {tid, email, timeslots} = req.body;
 
     try{
         if(G_EMAIL == email){
             return res.status(400).json({ success: false, message: "You cannot book time slot for your own property" });
         }
 
+        //send email to user
         await transporter.sendMail({
             from: `"Milkat Properties" <milkatproperties@gmail.com>`,
             to: G_EMAIL,
             subject: "Booking for the property veiwing slot ⏲",
-            text: `Time Slots: ${time_slots[0].start_time} to ${time_slots[0].end_time}`,
-            html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(time_slots[0].start_time).toLocaleDateString() + " " + days[new Date(time_slots[0].start_time).getDay()] + " : " + new Date(time_slots[0].start_time).toLocaleTimeString([], {
+            text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
+            html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
-              }) + " to " + new Date(time_slots[0].end_time).toLocaleTimeString([], {
+              }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}</b><br/><br/> Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
         });
 
+        //send email to owner
         await transporter.sendMail({
             from: `"Milkat Properties" <milkatproperties@gmail.com>`,
             to: email,
             subject: "Booking for the property veiwing slot ⏲",
-            text: `Time Slots: ${time_slots[0].start_time} to ${time_slots[0].end_time}`,
-            html: `<i>This is to inform you that a booking has been confirmed for the property veiwing as per given time below with the client</i><br/><br/><b> Time Slot: ${new Date(time_slots[0].start_time).toLocaleDateString() + " " + days[new Date(time_slots[0].start_time).getDay()] + " : " + new Date(time_slots[0].start_time).toLocaleTimeString([], {
+            text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
+            html: `<i>This is to inform you that a booking has been confirmed for the property veiwing as per given time below with the client</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
-              }) + " to " + new Date(time_slots[0].end_time).toLocaleTimeString([], {
+              }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}</b><br/><br/> Contact the client for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
         });
 
+        //update database to change time slot is used
         pool.query(`UPDATE time_slots SET used = 1 WHERE time_slot_id = ${tid}`, (err, result, fields) => {
             if(err){
                 console.log(err);
                 return res.status(500).json({ success: false, message: "Mysql time slots tid update error" });
             }
-             pool.query(`UPDATE user SET tid = ${tid} WHERE email = "${G_EMAIL}"`, (err1, result1, fields1) => {
-                if(err1){
-                    console.log(err1);
-                    return res.status(500).json({ success: false, message: "Mysql user tid update error" });
-                }
-            })
+            
         });
 
         return res.status(200).json({ success: true, message: "Booking confirmed" });
@@ -723,16 +717,31 @@ app.post("/booking", verifyToken,async (req, res) => {
     }
 });
 
-app.get("/userDashboard", verifyToken, (req, res) => {
+//get booked properties of corresponding user
+app.post("/userDashboard", verifyToken, (req, res) => {
+    const {page} = req.body;
+    const limit = 9;
+    const offset=(parseInt(page)-1)*limit;
+    let count=1;
     
     try{
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.pid IN(SELECT pid FROM user_saved_properties WHERE uid = (SELECT uid FROM user WHERE email = "${G_EMAIL}"))`, (err1, result1, fields1) => {
+        //count number of pages
+        pool.query(`SELECT count(*) as count FROM user_saved_properties WHERE uid = (SELECT uid FROM user WHERE email = "${G_EMAIL}")`, (err, result, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            count = Math.floor(result[0].count/limit+0.9999);
+        })
+
+        //get bookmarked properties of corresponding user
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.pid IN(SELECT pid FROM user_saved_properties WHERE uid = (SELECT uid FROM user WHERE email = "${G_EMAIL}")) limit ${limit} offset ${offset}`, (err1, result1, fields1) => {
             if (err1) {
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Something went wrong" });
             }
             // console.log(result1);
-            return res.status(200).json({ success: true, properties: result1 });
+            return res.status(200).json({ success: true, properties: result1 , count: count});
         })
     } catch(error){
         console.log(error);
@@ -740,16 +749,30 @@ app.get("/userDashboard", verifyToken, (req, res) => {
     }
 })
 
-app.get("/adminDashboard", verifyToken, (req, res) => {
+//get listed of properties of corresponding user
+app.post("/adminDashboard", verifyToken, (req, res) => {
+    const {page} = req.body;
+    const limit = 9;
+    const offset=(parseInt(page)-1)*limit;
+    let count=1;
 
     try{
-        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.email = "${G_EMAIL}"`, (err1, result1, fields1) => {
+        //count number of pages
+        pool.query(`SELECT count(*) as count FROM properties WHERE email = "${G_EMAIL}"`, (err, result, fields) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            count = Math.floor(result[0].count/limit+0.9999);
+        })
+
+        //get listed properties of corresponding user
+        pool.query(`SELECT *, (SELECT JSON_ARRAYAGG(i.path) FROM images i WHERE i.pid = p.pid) as image_paths FROM properties p where p.email = "${G_EMAIL}" limit ${limit} offset ${offset}`, (err1, result1, fields1) => {
             if (err1) {
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Something went wrong" });
             }
-            // console.log(result1);
-            return res.status(200).json({ success: true, properties: result1 });
+            return res.status(200).json({ success: true, properties: result1, count: count });
         })
     } catch(error){
         console.log(error);
@@ -757,9 +780,10 @@ app.get("/adminDashboard", verifyToken, (req, res) => {
     }
 })
 
+//insert chat message for corresponding user
 app.post("/chat", verifyToken, (req, res) => {
     const {postcode,comments} = req.body;
-    const postcode1= postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();;
+    const postcode1= postcode.replace(/^(.*\S)(\S{3})$/, '$1 $2').toUpperCase();
     
     pool.query(`SELECT uid FROM user WHERE email = ?`, [G_EMAIL], (err1, result1) => {
         if (err1) {
@@ -773,7 +797,7 @@ app.post("/chat", verifyToken, (req, res) => {
 
         const uid = result1[0].uid;
 
-        // Then, insert the chat message
+        // insert the chat message
         pool.query(
             `INSERT INTO chats (postcode, comment, uid) VALUES (?, ?, ?)`,
             [postcode1, comments, uid],
@@ -789,7 +813,8 @@ app.post("/chat", verifyToken, (req, res) => {
 
 })
 
-app.get("/chat_lookup", verifyToken, (req, res) => {
+//get all chat messages
+app.get("/chatLookup", verifyToken, (req, res) => {
     pool.query(`SELECT *, (SELECT name FROM user WHERE user.uid = chats.uid) AS name FROM chats`, (err, result, fields) => {
         if(err){
             console.log(err);
@@ -800,104 +825,9 @@ app.get("/chat_lookup", verifyToken, (req, res) => {
     });
 })
 
-app.get("/check",verifyToken, (req, res) => {
-
-    // const data ={
-    //     "project_id": 1630,
-    //     "background_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724242368/test/jerzhcjhni3pzgj2kaui.jpg",
-    //     "front_image_url":"https://res.cloudinary.com/dedjlhhmj/image/upload/v1724254464/test/kjizq7xvdpustn9zyrpa.png",
-    //     "position":"bc",
-    //     "image_max_width":"1200",
-    //     "image_max_height":"800"
-    // }
-
-    // axios.post("https://picnie.com/api/v1/add-watermark-image",data,{ headers: {"Authorization" : process.env.PICNIE_WATERMARK_API_KEY} }).then((response) => {
-    //     console.log(response.data.url);
-    //     // https://picnie.s3.ap-south-1.amazonaws.com/user_1392/project_1630/wm_3326_240821090444.jpg
-    //     // https://picnie.s3.ap-south-1.amazonaws.com/user_1392/project_1630/wm_7517_240821090946.jpg
-    // })
-
-
-    return res.status(200).json({ success: true, message: "Done" });
-})
-
-app.get("/bookingdemo", (req, res) => {
-
-    const time={
-        tid: 1,
-        anytime: 0,
-        end_time: '2024-08-22 17:00:29.000000',
-        start_time: '2024-08-22 14:00:29.000000'
-      }
-    async function main() {
-        // send mail with defined transport object
-        const info = await transporter.sendMail({
-          from: '"Milkat Properties" <milkatproperties@gmail.com>', // sender address
-          to: "moinmulla100@gmail.com", // list of receivers
-          subject: "Booking for the property veiwing slot ⏲",
-            text: `Time Slots: ${time}`, // plain text body
-          html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(time.start_time).toLocaleDateString() + " " + days[new Date(time.start_time).getDay()] + " : " + new Date(time.start_time).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }) + " to " + new Date(time.end_time).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}</b><br/><br/> Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
-        });
-      
-        console.log("Message sent: %s", info.messageId);
-        // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
-      }
-
-      main().catch(console.error);
-
-    return res.status(200).json({ success: true, message: "Mail sent" });
-})
-
-
-
-// app.get("/propertie", (req, res) => {
-//     const postcode = req.query.postcode;
-//     pool.query(`SELECT 
-//     GROUP_CONCAT(CONCAT(i.path, ' | ', t.start_time, ' | ', t.end_time, ' | ', t.anytime) SEPARATOR '; ') AS image_time_details
-// FROM 
-//     images i 
-// JOIN 
-//     time_slots t ON t.property_id = i.pid 
-// WHERE 
-//     i.pid = 107`, (err, result, fields) => {
-//         if(err){
-//             console.log(err);
-//             return res.status(500).json({ success: false, message: "Mysql property search error" });
-//         }
-//         console.log(result);
-//         return res.status(200).json({ success: true, properties: result });
-//     })
-// })
-
-
-app.use((error, req, res, next) => {
-    const message = error.message || "Internal Server Error";
-    const statusCode = error.statusCode || 500;
-    console.log("Message:***********************",error);
-})
-
-// function funct(){ 
-//     let data ="U2FsdGVkX19EFnf1%2BlvWjMIj0U%2BQHMp1vkQhqRLy5MHcI%2Brcpvbr5atHpHSSYfuz1iSAy8F9%2BveDuCaBZNhXZEhlxuJXRWVUV7cQcujSAG7TbYXEoabzeXifyoTbxBVj5d3XsN5P8uqokdwYvtQzabXxuNJdHESSU21kykw97HzFao%2BVKPeHXAI5fHzb0HKBmAQ%2BAZLKEQN3mRsYeujuVqvPImgTnd2ZES4EoOlMeI9lr3Zk8Yx1nby10ejiAHee7eXD0cFkCJTZ6bpwvYM7n1OUuiVdKjPmwvnyeqjNECrLHrUqRO5Ia7V7RmpNaSahPLUd2SRAbDgg%2B0GlTb2F1Wb3RAL7Ehc38x4QDOgwbWI%3D";
-//     const bytes = CryptoJS.AES.decrypt(decodeURIComponent(data), process.env.CRYPTO_SECRET);
-//     const originalText = bytes.toString(CryptoJS.enc.Utf8);
-
-//     console.log(originalText);
-//     // return res.status(200).json({ success: true, message: "hello" });
-// }
-
-// funct();
-
-
+//get list of addresses based on postcode
 app.post("/postcode", async (req, res) => {
     let {postcode} = req.body;
-
-    console.log(postcode);
 
     if(postcode){
         await axios.request({
@@ -914,7 +844,8 @@ app.post("/postcode", async (req, res) => {
 
 })
 
-app.post("/postcode_address", async (req, res) => {
+//get full address based on selected address
+app.post("/postcodeAddress", async (req, res) => {
     let {url} = req.body;
    
     if(url){
@@ -931,36 +862,22 @@ app.post("/postcode_address", async (req, res) => {
     }
 })
 
+//get average house price from year 2000 to 2019 from database
+app.get("/propertiesPrice", async (req, res) => {
+    try{
+        pool.query("SELECT * FROM average_house_price", (err, result, fields) => {
+            if(err){
+                console.log(err);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            if(result.length == 0){
+                return res.status(200).json({ success: true, prices: [] });
+            }
+            return res.status(200).json({ success: true, prices: result });
+        })
+    } catch(error){
+        console.log(error);
+    }
+})
+
 app.listen(port, () => console.log(`Server running on port ${port}!`))          
-
-
-
- // console.log(url);
-
-    // const response ={
-    //     "postcode": "LE5 3SA",
-    //     "latitude": 52.6384,
-    //     "longitude": -1.10326,
-    //     "formatted_address": [
-    //         "Little Mumins Daycare Ltd",
-    //         "89 Rolleston Street",
-    //         "",
-    //         "Leicester",
-    //         "Leicestershire"
-    //     ],
-    //     "thoroughfare": "Rolleston Street",
-    //     "building_name": "",
-    //     "sub_building_name": "",
-    //     "sub_building_number": "",
-    //     "building_number": "89",
-    //     "line_1": "Little Mumins Daycare Ltd",
-    //     "line_2": "89 Rolleston Street",
-    //     "line_3": "",
-    //     "line_4": "",
-    //     "locality": "",
-    //     "town_or_city": "Leicester",
-    //     "county": "Leicestershire",
-    //     "district": "Leicester",
-    //     "country": "England",
-    //     "residential": false
-    // };

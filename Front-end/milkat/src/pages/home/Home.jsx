@@ -11,9 +11,9 @@ function Home() {
     <div>
       <div className={styles.content}>
         <div className={styles.header}>
-          <div className={styles.header_text}>
+          <div className={styles.headerText}>
             <div className={styles.heading}>
-              <span className={styles.heading_text}>
+              <span className={styles.headingText}>
                 Welcome to <span className={styles.highlight}>Milkat</span>,
                 <br />
               </span>
@@ -36,7 +36,7 @@ function Home() {
         </div>
         <div className={styles.reviews}>
           <p>Reviews</p>
-          <div className={styles.each_reviews}>
+          <div className={styles.eachReviews}>
             <Reviews />
             <Reviews />
             <Reviews />

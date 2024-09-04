@@ -10,41 +10,48 @@ import styles from "./userDashboard.module.scss";
 
 const UserDashboard = () => {
   const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(1);
 
   const { clearData } = useContext(LoginContext);
   const navigate = useNavigate();
 
-  const secret_key = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
-  const cookie_value = decodeURIComponent(document.cookie);
+  const secretKey = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
+  const cookieValue = decodeURIComponent(document.cookie);
 
-  const temp_token = cookie_value.match(new RegExp("token=([^;]+)"));
+  const tempToken = cookieValue.match(new RegExp("token=([^;]+)"));
+  if (tempToken == null) {
+    clearData();
+    navigate("/");
+  }
+  const bytes = CryptoJS.AES.decrypt(tempToken[1], secretKey);
 
-  const bytes = CryptoJS.AES.decrypt(temp_token[1], secret_key);
+  const decryptedToken = bytes.toString(CryptoJS.enc.Utf8);
 
-  const decrypted_token = bytes.toString(CryptoJS.enc.Utf8);
-
-  const role1 = decrypted_token.match(new RegExp("role=([^;]+)"));
-  const email1 = decrypted_token.match(new RegExp("email=([^;]+)"));
-  const name1 = decrypted_token.match(new RegExp("name=([^;]+)"));
+  const role1 = decryptedToken.match(new RegExp("role=([^;]+)"));
+  const email1 = decryptedToken.match(new RegExp("email=([^;]+)"));
+  const name1 = decryptedToken.match(new RegExp("name=([^;]+)"));
   const role = role1[1];
   const email = email1[1];
   const name = name1[1];
 
   useEffect(() => {
+    //fetch user dashboard data(i.e. bookmarked properties)
     axios
-      .get("/userDashboard")
+      .post("/userDashboard", {
+        page: page,
+      })
       .then((res) => {
-        console.log(res.data);
+        setCount(res.data.count);
         setData(res.data.properties);
       })
       .catch((err) => console.log(err));
-  }, []);
+  }, [page]);
 
   const handleLogout = () => {
     axios
       .get("/logout")
       .then((res) => {
-        localStorage.clear();
         toast.success(res.data.message, {
           position: "top-right",
           autoClose: 2000,
@@ -59,7 +66,6 @@ const UserDashboard = () => {
         navigate("/");
       })
       .catch((err) => {
-        console.log(err);
         toast.error(err.response.data.message, {
           position: "top-right",
           autoClose: 2000,
@@ -95,15 +101,15 @@ const UserDashboard = () => {
       </div>
       <div className={styles.content}>
         <div className={styles.heading}>
-          <span className={styles.bookmark_heading}>
+          <span className={styles.bookmarkHeading}>
             Your bookmarked properties
           </span>
         </div>
         <div>
           {data.length ? (
-            <Card data={data} />
+            <Card data={data} count={count} setPage={setPage} page={page} />
           ) : (
-            <div className={styles.no_properties}>No properties bookmarked</div>
+            <div className={styles.noProperties}>No properties bookmarked</div>
           )}
         </div>
         <div className={styles.logout}>

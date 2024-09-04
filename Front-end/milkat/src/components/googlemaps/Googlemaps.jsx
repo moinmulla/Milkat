@@ -21,13 +21,7 @@ function Googlemaps({ props }) {
     <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
       <div className={styles.map}>
         <Map defaultZoom={20} defaultCenter={position}>
-          <Marker
-            position={position}
-            // ref={markerRef}
-            onClick={() => setOpen(true)}
-          >
-            {/* <Pin background={"grey"} borderColor={"green"} glyphColor={"red"} /> */}
-          </Marker>
+          <Marker position={position} onClick={() => setOpen(true)}></Marker>
           {open && (
             <InfoWindow
               position={position}
