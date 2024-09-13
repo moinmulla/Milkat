@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
+import Cookies from "js-cookie";
 import { LoginContext } from "../../hooks/LoginContext";
 import Button from "react-bootstrap/Button";
 import { toast } from "react-toastify";
@@ -45,7 +46,12 @@ const UserDashboard = () => {
         setCount(res.data.count);
         setData(res.data.properties);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        if (Cookies.get("token") == undefined) {
+          clearData();
+        }
+      });
   }, [page]);
 
   const handleLogout = () => {

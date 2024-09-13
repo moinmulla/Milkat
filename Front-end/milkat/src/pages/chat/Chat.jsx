@@ -1,7 +1,9 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useContext } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import axios from "../../utils/axios";
+import Cookies from "js-cookie";
+import { LoginContext } from "../../hooks/LoginContext";
 import { toast } from "react-toastify";
 import styles from "./chat.module.scss";
 
@@ -11,6 +13,7 @@ function Chat() {
   const [open, setOpen] = useState(false);
   const [filterPostcode, setFilterPostcode] = useState("");
   const [filteredData, setFilteredData] = useState([]);
+  const { clearData } = useContext(LoginContext);
 
   const initialValues = {
     postcode: "",
@@ -65,18 +68,39 @@ function Chat() {
   };
 
   useEffect(() => {
-    axios.get("/chatLookup").then((res) => {
-      setData(res.data.message);
-      setFilteredData(res.data.message);
-    });
+    axios
+      .get("/chatLookup")
+      .then((res) => {
+        setData(res.data.message);
+        setFilteredData(res.data.message);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error(err.response.data.message, {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "colored",
+        });
+        if (Cookies.get("token") == undefined) {
+          clearData();
+        }
+      });
   }, [open]);
 
   const handleFilterChange = (e) => {
     const value = e.target.value;
+
     setFilterPostcode(value);
 
     const filtered = data.filter((item) =>
-      item.postcode.toLowerCase().includes(value.toLowerCase())
+      item.postcode
+        .toUpperCase()
+        .includes(value.replace(/^(.*\S)(\S{3})$/, "$1 $2").toUpperCase())
     );
 
     setFilteredData(filtered);

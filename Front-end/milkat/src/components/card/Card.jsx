@@ -91,113 +91,123 @@ const Cards = ({ data, setBookmark, setPage, count = 1, page }) => {
   return (
     <div className={styles.box}>
       <div className={styles.container}>
-        {data.map((item) => (
-          <Card className={styles.card}>
-            <div className={styles.carouselBox}>
-              <Carousel data-bs-theme="light" className={styles.carousel}>
-                {item.image_paths ? (
-                  item.image_paths.map(
-                    (image, index) =>
-                      index < 3 && (
-                        <Carousel.Item>
-                          <img
-                            className={`d-block w-100 ${styles.img}`}
-                            src={image}
-                            alt="Image not available"
-                            height="300px"
-                            key={index}
-                          />
-                        </Carousel.Item>
-                      )
-                  )
-                ) : (
-                  <Card.Img
-                    variant="top"
-                    src="holder.js/100px180"
-                    alt="No image"
-                  />
-                )}
-              </Carousel>
-            </div>
-            <Card.Body onClick={() => handleClick(item.pid)}>
-              <div className={styles.top_title}>
-                <Card.Title>
-                  {formatter.format(item.price)}
-                  {!item.sale && " pcm"}
-                </Card.Title>
-                <div className={styles.sale_rent}>
-                  {item.sale ? "Sale" : "Rent"}
-                </div>
+        {data.length ? (
+          data.map((item) => (
+            <Card className={styles.card}>
+              <div className={styles.carouselBox}>
+                <Carousel data-bs-theme="light" className={styles.carousel}>
+                  {item.image_paths ? (
+                    item.image_paths.map(
+                      (image, index) =>
+                        index < 3 && (
+                          <Carousel.Item>
+                            <img
+                              className={`d-block w-100 ${styles.img}`}
+                              src={image}
+                              alt="Image not available"
+                              height="300px"
+                              key={index}
+                            />
+                          </Carousel.Item>
+                        )
+                    )
+                  ) : (
+                    <Card.Img
+                      variant="top"
+                      src="holder.js/100px180"
+                      alt="No image"
+                    />
+                  )}
+                </Carousel>
               </div>
-              <Card.Subtitle className="mb-2 text-muted">
-                {!item.sale && formatter.format(item.price / 4) + " pcw"}
-              </Card.Subtitle>
-              <Card.Subtitle className="mb-2 text-muted">
-                <div className={styles.subtitle}>
-                  <div className={styles.divider}>
-                    <div className={styles.headline}>{item.headline}</div>
-
-                    <div className={styles.link}>
-                      <FaLink
-                        size={25}
-                        onClick={(e) => handleCopy(e, item.pid)}
-                      />
-                    </div>
+              <Card.Body onClick={() => handleClick(item.pid)}>
+                <div className={styles.top_title}>
+                  <Card.Title>
+                    {formatter.format(item.price)}
+                    {!item.sale && " pcm"}
+                  </Card.Title>
+                  <div className={styles.sale_rent}>
+                    {item.sale ? "Sale" : "Rent"}
                   </div>
-                  {data.listedProperties ? (
+                </div>
+                <Card.Subtitle className="mb-2 text-muted">
+                  {!item.sale && formatter.format(item.price / 4) + " pcw"}
+                </Card.Subtitle>
+                <Card.Subtitle className="mb-2 text-muted">
+                  <div className={styles.subtitle}>
                     <div className={styles.divider}>
-                      <div className={styles.property_type}>
-                        {item.property_type}
-                      </div>
-                      <div className={styles.delink}>
-                        <FaTrashAlt
+                      <div className={styles.headline}>{item.headline}</div>
+
+                      <div className={styles.link}>
+                        <FaLink
                           size={25}
-                          onClick={(e) => handleDelete(e, item.pid)}
+                          onClick={(e) => handleCopy(e, item.pid)}
                         />
                       </div>
                     </div>
-                  ) : (
-                    <div className={styles.property_type}>
-                      {item.property_type}
-                    </div>
-                  )}
-                  <div className={styles.divider}>
-                    <div className={styles.details}>
-                      <div className={styles.ind_details} title="Reception">
-                        <GiSofa size={20} />
-                        {item.reception}
+                    {data.listedProperties ? (
+                      <div className={styles.divider}>
+                        <div className={styles.property_type}>
+                          {item.property_type}
+                        </div>
+                        <div className={styles.delink}>
+                          <FaTrashAlt
+                            size={25}
+                            onClick={(e) => handleDelete(e, item.pid)}
+                          />
+                        </div>
                       </div>
-                      <div className={styles.ind_details} title="Bedroom">
-                        <IoBed size={20} />
-                        {item.bedroom}
+                    ) : (
+                      <div className={styles.property_type}>
+                        {item.property_type}
                       </div>
-                      <div className={styles.ind_details} title="Bathroom">
-                        <FaBath size={20} />
-                        {item.bathroom}
+                    )}
+                    <div className={styles.divider}>
+                      <div className={styles.details}>
+                        <div className={styles.ind_details} title="Reception">
+                          <GiSofa size={20} />
+                          {item.reception}
+                        </div>
+                        <div className={styles.ind_details} title="Bedroom">
+                          <IoBed size={20} />
+                          {item.bedroom}
+                        </div>
+                        <div className={styles.ind_details} title="Bathroom">
+                          <FaBath size={20} />
+                          {item.bathroom}
+                        </div>
                       </div>
-                    </div>
-                    <div className={styles.details}>
-                      <div className={styles.ind_details}>
-                        <FaRegStar size={20} className={styles.star} />
-                        {item.rating}
+                      <div className={styles.details}>
+                        <div className={styles.ind_details}>
+                          <FaRegStar size={20} className={styles.star} />
+                          {item.rating}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card.Subtitle>
-              <Card.Text className={styles.address}>
-                {item.address_line1}, {item.town} {item.postcode.split(" ")[0]}
-              </Card.Text>
-              <Card.Text className={styles.decription}>
-                {item.description && item.description.length < 200
-                  ? item.description
-                  : item.description
-                  ? item.description.substring(0, 200) + "..."
-                  : "No description available."}
-              </Card.Text>
-            </Card.Body>
-          </Card>
-        ))}
+                </Card.Subtitle>
+                <Card.Text className={styles.address}>
+                  {item.address_line1}, {item.town}{" "}
+                  {item.postcode.split(" ")[0]}
+                </Card.Text>
+                <Card.Text className={styles.decription}>
+                  {item.description && item.description.length < 200
+                    ? item.description
+                    : item.description
+                    ? item.description.substring(0, 200) + "..."
+                    : "No description available."}
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          ))
+        ) : (
+          <>
+            <div></div>
+            <div className={styles.noProperty}>
+              No properties found for applied filter on current page
+            </div>
+          </>
+        )}
       </div>
       <div className={styles.pagination}>
         <Pagination

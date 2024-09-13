@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Select from "react-select";
 import SearchBar from "../../components/searchbar/SearchBar";
+import GooglemapsCluster from "../../components/googlemapsCluster/GooglemapsCluster";
 import { BsSortDown, BsSortDownAlt } from "react-icons/bs";
 import Card from "../../components/card/Card";
 import Pagination from "@mui/material/Pagination";
@@ -314,6 +315,9 @@ function Search() {
             </div>
           </>
         )}
+      </div>
+      <div>
+        <GooglemapsCluster props={newData} />
       </div>
     </div>
   );

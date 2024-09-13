@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
+import Cookies from "js-cookie";
 import { LoginContext } from "../../hooks/LoginContext";
 import Button from "react-bootstrap/Button";
 import { toast } from "react-toastify";
@@ -68,7 +69,12 @@ const AdminDashboard = () => {
         setListedProperties(res.data.properties);
         setCount2(res.data.count);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        if (Cookies.get("token") == undefined) {
+          clearData();
+        }
+      });
   }, [bookmark, page1, page2]);
 
   const handleLogout = () => {

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import Cookies from "js-cookie";
 import Navbar from "./components/navbar/Navbar";
@@ -20,9 +20,10 @@ import { LoginProvider, LoginContext } from "./hooks/LoginContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.scss";
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, roleAdmin }) => {
   const { clearData, changeLogin, changeRole, changeToken } =
     useContext(LoginContext);
+  // const { clearData, login, role, token } = useContext(LoginContext);
   const secretKey = `${process.env.REACT_APP_SECRET_KEY}` || "secret_key";
 
   if (Cookies.get("token") == undefined) {
@@ -52,9 +53,16 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   const token = decryptedToken.match(new RegExp("token=([^;]+)"));
   const name = decryptedToken.match(new RegExp("name=([^;]+)"));
 
+
   const role1 = role[1];
   const name1 = name[1];
   const token1 = token[1];
+
+  // const role1 = role;
+  // const name1 = login;
+  // const token1 = token;
+
+  // console.log(role1, name1, token1);
 
   changeLogin(name[1]);
   changeRole(role[1]);
@@ -67,6 +75,25 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   if (role && role1 == "user" && requiredRole === "property") {
     return <UserDashboard />;
+  }
+
+  //roleAdmin is used to render only admin listup components
+  if (role && role1 === "admin" && roleAdmin === "admin") {
+    return <Listup />;
+  }
+
+  if (role && role1 === "user" && roleAdmin === "admin") {
+    toast.error("Unauthorized access", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+    return <Home />;
   }
 
   return token1 !== "" ? children : <Home />;
@@ -88,7 +115,7 @@ function App({ children }) {
               <Route
                 path="/listup"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute roleAdmin="admin">
                     <Listup />
                   </ProtectedRoute>
                 }

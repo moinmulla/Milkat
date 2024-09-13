@@ -8,8 +8,7 @@
     "@mui/lab": "^5.0.0-alpha.173",
     "@mui/material": "^5.16.5",
     "@mui/x-date-pickers": "^7.11.1",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
+    "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^13.5.0",
     "@vis.gl/react-google-maps": "^1.1.0",
     "axios": "^1.7.2",
@@ -59,5 +58,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.4",
+    "@babel/preset-react": "^7.24.7",
+    "babel-jest": "^29.7.0"
   }
 }

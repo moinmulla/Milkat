@@ -51,8 +51,6 @@ function Modal({ modal, setModal }) {
   });
 
   const handleSubmit = async (values, { setSubmitting }) => {
-    console.log("Form data:", values);
-
     axios
       .post("/login", values)
       .then((res) => {

@@ -67,7 +67,16 @@
         color: grey;
     }
 
+    .noProperty{
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 400;
+        margin-top: 1rem;
+    }
+
 }
+
+
 
 .pagination{
     display: flex;
@@ -88,5 +97,9 @@
     .container{
         margin: 0 0.8rem;
         grid-template-columns: repeat(1, 1fr);
+
+        .noProperty{
+            font-size: 1rem;
+        }
     }
 }

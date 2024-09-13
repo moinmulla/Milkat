@@ -35,6 +35,8 @@ const Property = () => {
   //used to know whether the user has bookmarked the property or not
   const [saved, setSaved] = useState(false);
 
+  const [timeSlotConfirm, setTimeSlotConfirm] = useState(false);
+
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [admin, setAdmin] = useState(false);
@@ -95,10 +97,13 @@ const Property = () => {
         axios
           .post("/booking", {
             tid: selectedSlot.tid,
+            pid: pid,
             email: data.email,
             timeslots: data.time_slots.filter(
               (slot) => slot.tid === selectedSlot.tid
             ),
+            streetName: data.address_line1,
+            postcode: data.postcode,
           })
           .then((res) => {
             setIsConfirmed(false);
@@ -244,6 +249,7 @@ const Property = () => {
           axios
             .post("/timeslot", { timeslots: timeSlots, pid: pid })
             .then((res) => {
+              setTimeSlotConfirm(!timeSlotConfirm);
               toast.success(res.data.message, {
                 position: "top-right",
                 autoClose: 2000,
@@ -287,11 +293,10 @@ const Property = () => {
   const handleRating = (num) => {
     //check whether the user is logged in or not
     if (Cookies.get("token") !== undefined) {
-      setRatings(1);
       axios
         .get("/rating", { params: { pid: pid, rating: num } })
         .then((res) => {
-          setRatings(0);
+          setRatings(!ratings);
           toast.success(res.data.message, {
             position: "top-right",
             autoClose: 2000,
@@ -360,7 +365,7 @@ const Property = () => {
     if (Cookies.get("token") !== undefined) {
       fetchSavedProperties();
     }
-  }, [ratings, isConfirmed]);
+  }, [ratings, isConfirmed, timeSlotConfirm]);
 
   useEffect(() => {
     const checkAdmin = async () => {

@@ -109,3 +109,13 @@
     }
     
 }
+
+/* CSS breakpoints*/
+
+@media(max-width: 480px){
+    .container{
+        .heading{
+            font-size: 2rem;
+        }
+    }
+}

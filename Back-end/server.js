@@ -40,7 +40,7 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 //used to store email id of logged in user
-let G_EMAIL = "a@b.com"
+let G_EMAIL="a@b.com"
 
 const pool = mysql2.createPool({
     host: process.env.DB_HOST,
@@ -86,10 +86,11 @@ app.use((error, req, res, next) => {
 //middleware to verify token and check whether the user exists in the database or not before accessing any route otherwise cookies will be deleted and user will be logged out
 const verifyToken = (req, res, next) => {
     const token = req.cookies.token||"abcd";
+    // console.log(token)
     
     try{
         if (token==="abcd") {
-            return res.status(401).json({ success: false, message: 'Unauthorized: Access token missing' });
+            return res.status(401).json({ success: false, message: 'Unauthorized: Token missing' });
         }
 
         const decryptedToken = CryptoJS.AES.decrypt(token, process.env.CRYPTO_SECRET).toString(CryptoJS.enc.Utf8);
@@ -113,7 +114,7 @@ const verifyToken = (req, res, next) => {
                 if(result[0].token === token){
                     await jwt.verify(token1, process.env.JWT_SECRET, (err, decode) => {
                         if (err) {
-                            return res.status(401).json({ success: false, message: 'Unauthorized: Invalid access token' });
+                            return res.status(401).json({ success: false, message: 'Unauthorized: Invalid access' });
                         }else{
                             if(Date.now()>=(decode.exp*1000)){
                                 res.clearCookie("token");
@@ -146,7 +147,7 @@ const verifyToken = (req, res, next) => {
             }
         });
     }catch(error){
-        return res.status(401).json({ error: 'Unauthorized: Invalid access token' });
+        return res.status(401).json({ error: 'Unauthorized: Invalid access' });
     }
 }
 
@@ -192,7 +193,7 @@ app.post("/login", async (req, res) => {
                 return res.status(500).json({ success: false, message: "Something went wrong" });
             } 
             if(result.length === 0) {
-                res.status(401).json({success:false, message:"Provided email does not registered"});
+                return res.status(401).json({success:false, message:"Provided email does not registered"});
             }else{
                 const passwordMatch = await bcrypt.compare(password, result[0].password);
                 if (passwordMatch){
@@ -289,7 +290,6 @@ app.post("/listup", verifyToken, upload.any("images") , (req, res) => {
                         console.log(err1);
                         return res.status(500).json({ success: false, message: "Something went wrong" });
                     }
-                    console.log(result1.insertId);
         
                     //id of inserted property
                     const insertId = result1.insertId;
@@ -532,7 +532,7 @@ app.get("/properties", (req, res) =>  {
     }
 
     //number of items per page
-    const limit = 9;
+    const limit = 6;
     //total number of pages
     let count=1;
     const offset=(page-1)*limit;
@@ -663,54 +663,72 @@ app.post("/unsave",verifyToken, (req, res) => {
 })
 
 //Book time slot for property and send email to both owner and user
-app.post("/booking", verifyToken,async (req, res) => {
-    let {tid, email, timeslots} = req.body;
+app.post("/booking", verifyToken, (req, res) => {
+    let {tid, pid, email, timeslots, streetName, postcode} = req.body;
 
     try{
         if(G_EMAIL == email){
             return res.status(400).json({ success: false, message: "You cannot book time slot for your own property" });
         }
 
-        //send email to user
-        await transporter.sendMail({
-            from: `"Milkat Properties" <milkatproperties@gmail.com>`,
-            to: G_EMAIL,
-            subject: "Booking for the property veiwing slot ⏲",
-            text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
-            html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}</b><br/><br/> Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
-        });
-
-        //send email to owner
-        await transporter.sendMail({
-            from: `"Milkat Properties" <milkatproperties@gmail.com>`,
-            to: email,
-            subject: "Booking for the property veiwing slot ⏲",
-            text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
-            html: `<i>This is to inform you that a booking has been confirmed for the property veiwing as per given time below with the client</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}</b><br/><br/> Contact the client for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
-        });
-
-        //update database to change time slot is used
-        pool.query(`UPDATE time_slots SET used = 1 WHERE time_slot_id = ${tid}`, (err, result, fields) => {
-            if(err){
-                console.log(err);
-                return res.status(500).json({ success: false, message: "Mysql time slots tid update error" });
+        //check whether booking already exists
+        pool.query(`SELECT * FROM booking WHERE uid=(SELECT uid FROM user WHERE email=?) AND pid=?`, [G_EMAIL, pid, tid],async (err1, result1, fields1) => {
+            if(err1){
+                console.log(err1);
+                return res.status(500).json({ success: false, message: "Something went wrong" });
+            }
+            if(result1.length != 0){
+                return res.status(400).json({ success: false, message: "You have already booked time slot for this property" });
             }
             
-        });
+            //send email to user
+            await transporter.sendMail({
+                from: `"Milkat Properties" <milkatproperties@gmail.com>`,
+                to: G_EMAIL,
+                subject: "Booking for the property veiwing slot ⏲",
+                text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
+                html: `<i>Booking confirmed for the property veiwing as per given time below</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                })}</b><br/><br/><b>Address: ${streetName}, ${postcode}</b><br/><br/>Contact the property owner for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
+            });
 
-        return res.status(200).json({ success: true, message: "Booking confirmed" });
+            //send email to owner
+            await transporter.sendMail({
+                from: `"Milkat Properties" <milkatproperties@gmail.com>`,
+                to: email,
+                subject: "Booking for the property veiwing slot ⏲",
+                text: `Time Slots: ${timeslots[0].start_time} to ${timeslots[0].end_time}`,
+                html: `<i>This is to inform you that a booking has been confirmed for the property veiwing as per given time below with the client</i><br/><br/><b> Time Slot: ${new Date(timeslots[0].start_time).toLocaleDateString() + " " + days[new Date(timeslots[0].start_time).getDay()] + " : " + new Date(timeslots[0].start_time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                }) + " to " + new Date(timeslots[0].end_time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                })}</b><br/><br/><b>Address: ${streetName}, ${postcode}</b><br/><br/> Contact the client for more details during this time.<br/><br/>Regards,<br/>Milkat Properties`, 
+            });
+
+            //update database to change time slot is used
+            pool.query(`UPDATE time_slots SET used = 1 WHERE time_slot_id = ${tid}`, (err2, result2, fields2) => {
+                if(err2){
+                    console.log(err);
+                }
+                //insert booking of user for particular property
+                pool.query(`INSERT INTO booking (uid,pid,tid) VALUES ((SELECT uid FROM user WHERE email = ?),?,?)`, [G_EMAIL, pid, tid], (err3, result3, fields3) => {
+                    if(err3){
+                        console.log(err1);
+                    }
+                })
+                
+            });
+
+            return res.status(200).json({ success: true, message: "Booking confirmed" });
+        })
+
+
     }catch(error){
         console.log(error);
         return res.status(500).json({ success: false, message: "Server error" });
@@ -720,7 +738,7 @@ app.post("/booking", verifyToken,async (req, res) => {
 //get booked properties of corresponding user
 app.post("/userDashboard", verifyToken, (req, res) => {
     const {page} = req.body;
-    const limit = 9;
+    const limit = 6;
     const offset=(parseInt(page)-1)*limit;
     let count=1;
     
@@ -740,7 +758,6 @@ app.post("/userDashboard", verifyToken, (req, res) => {
                 console.log(err1);
                 return res.status(500).json({ success: false, message: "Something went wrong" });
             }
-            // console.log(result1);
             return res.status(200).json({ success: true, properties: result1 , count: count});
         })
     } catch(error){
@@ -752,7 +769,7 @@ app.post("/userDashboard", verifyToken, (req, res) => {
 //get listed of properties of corresponding user
 app.post("/adminDashboard", verifyToken, (req, res) => {
     const {page} = req.body;
-    const limit = 9;
+    const limit = 6;
     const offset=(parseInt(page)-1)*limit;
     let count=1;
 
@@ -820,7 +837,6 @@ app.get("/chatLookup", verifyToken, (req, res) => {
             console.log(err);
             return res.status(500).json({ success: false, message: "Mysql chat lookup error" });
         }
-        console.log(result);
         return res.status(200).json({ success: true, message: result });
     });
 })
@@ -881,3 +897,5 @@ app.get("/propertiesPrice", async (req, res) => {
 })
 
 app.listen(port, () => console.log(`Server running on port ${port}!`))          
+
+module.exports = app

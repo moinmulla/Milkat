@@ -29,7 +29,7 @@ function Footer() {
               <a href="/chat">
                 <li>Open Chat System</li>
               </a>
-              <a href="#">
+              <a href="/dashboard">
                 <li>Saved Properties</li>
               </a>
             </ul>

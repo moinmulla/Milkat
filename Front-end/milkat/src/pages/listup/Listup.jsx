@@ -1,23 +1,27 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useContext } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import Cookies from "js-cookie";
 import Timeslot from "../../components/timeslot/Timeslot";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import { LoginContext } from "../../hooks/LoginContext";
 import { FaBath } from "react-icons/fa";
 import { IoBed } from "react-icons/io5";
 import { GiSofa } from "react-icons/gi";
 import { FaPoundSign } from "react-icons/fa";
 import { MdLocationOn } from "react-icons/md";
-import axios from "../../utils/axios";
 import { toast } from "react-toastify";
+import axios from "../../utils/axios";
 import useDebounce from "../../hooks/useDebounce";
 import styles from "./listup.module.scss";
 
 function ListUp() {
   //used to listen to form values
   const formikRef = useRef();
+
+  const { clearData } = useContext(LoginContext);
 
   const [timeSlots, setTimeSlots] = useState([]);
   const [anytimeBox, setAnytimeBox] = useState(true);
@@ -55,7 +59,7 @@ function ListUp() {
     description: Yup.string()
       .required("Required")
       .min(10, "Must be at least 10 characters")
-      .max(600, "Must be 600 characters or less"),
+      .max(1000, "Must be 1000 characters or less"),
     propertyType: Yup.string().required("Required"),
     saleRent: Yup.string().required("Required"),
     price: Yup.string().required("Required"),
@@ -93,8 +97,6 @@ function ListUp() {
   };
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-    console.log("Form data:", values);
-
     //stores time slots if any else set to empty json
     let modifiedValues = {};
     if (timeSlots.length > 0) {
@@ -153,6 +155,9 @@ function ListUp() {
           progress: undefined,
           theme: "colored",
         });
+        if (Cookies.get("token") == undefined) {
+          clearData();
+        }
       });
 
     setSubmitting(false);
